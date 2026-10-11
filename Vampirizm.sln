@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Solution
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vampirizm", "Vampirizm\Vampirizm.csproj", "{61C22498-CE96-454F-BA83-125BAF0064F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vampirizm.Tests", "Vampirizm.Tests\Vampirizm.Tests.csproj", "{89B45782-5E29-4044-9266-B2ADC6DA0E66}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{61C22498-CE96-454F-BA83-125BAF0064F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61C22498-CE96-454F-BA83-125BAF0064F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61C22498-CE96-454F-BA83-125BAF0064F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61C22498-CE96-454F-BA83-125BAF0064F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89B45782-5E29-4044-9266-B2ADC6DA0E66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89B45782-5E29-4044-9266-B2ADC6DA0E66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89B45782-5E29-4044-9266-B2ADC6DA0E66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89B45782-5E29-4044-9266-B2ADC6DA0E66}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
