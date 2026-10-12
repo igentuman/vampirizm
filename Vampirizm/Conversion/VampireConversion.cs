@@ -28,6 +28,7 @@ namespace Vampirizm.Conversion
             if (!controller.Convert()) return true;
             inventory.RemoveOneItem(item);
             player.GetZAnim().SetTrigger("interact");
+            RitualEffect.Broadcast(player);
             player.Message(MessageHud.MessageType.Center, "$vampirizm_converted_ritual");
             return true;
         }

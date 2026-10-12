@@ -1,5 +1,6 @@
 using HarmonyLib;
 using UnityEngine;
+using Vampirizm.Conversion;
 using Vampirizm.Core;
 using Vampirizm.Networking;
 
@@ -9,10 +10,9 @@ namespace Vampirizm.Patches
     internal static class BitePatches
     {
         // The alternative attack with empty hands becomes the bite; while drinking the vampire cannot move or fight.
-        // Chat, inventory and menus send all-false controls, which releases the bite.
         [HarmonyPrefix, HarmonyPatch(typeof(Player), nameof(Player.SetControls))]
         private static void BeforeSetControls(Player __instance, ref Vector3 movedir, ref bool attack, ref bool attackHold,
-            ref bool secondaryAttack, ref bool secondaryAttackHold, ref bool block, ref bool blockHold, ref bool jump, ref bool dodge,
+            ref bool secondaryAttack, ref bool secondaryAttackHold, ref bool block, ref bool blockHold, ref bool jump, ref bool crouch, ref bool dodge,
             ItemDrop.ItemData ___m_rightItem, ItemDrop.ItemData ___m_leftItem)
         {
             if (__instance != Player.m_localPlayer) return;
@@ -22,21 +22,26 @@ namespace Vampirizm.Patches
             bool batForm = controller.BatForm.Active;
             if (unarmed || batForm || controller.Drain.Active)
             {
-                controller.Drain.Input((unarmed || batForm) && secondaryAttack, secondaryAttackHold && (unarmed || batForm));
+                controller.Drain.Input((unarmed || batForm) && secondaryAttack);
                 secondaryAttack = false;
                 secondaryAttackHold = false;
             }
             if (!controller.Drain.Active) return;
-            if (batForm) controller.BatForm.SetControls(Vector3.zero, false, false);
+            if (batForm) controller.BatForm.SetControls(Vector3.zero, false);
             movedir = Vector3.zero;
             attack = attackHold = false;
             block = blockHold = false;
-            jump = false;
+            // Vanilla stops an emote on any of these inputs.
+            jump = crouch = false;
             dodge = false;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Character), "Awake")]
-        private static void AfterCharacterAwake(Character __instance) => DrainNetwork.RegisterCharacter(__instance);
+        private static void AfterCharacterAwake(Character __instance)
+        {
+            DrainNetwork.RegisterCharacter(__instance);
+            if (__instance is Player player) RitualEffect.Register(player);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Game), "Start")]
         private static void AfterGameStart() => DrainNetwork.RegisterRouted();
@@ -50,6 +55,13 @@ namespace Vampirizm.Patches
 
         [HarmonyPrefix, HarmonyPatch(typeof(AnimalAI), nameof(AnimalAI.UpdateAI))]
         private static bool BeforeAnimalAI(BaseAI __instance, ref bool __result) => Hold(__instance, ref __result);
+
+        // A held victim is pinned to the drinking vampire after vanilla motion has run for this step.
+        [HarmonyPostfix, HarmonyPatch(typeof(Character), nameof(Character.CustomFixedUpdate))]
+        private static void AfterCharacterFixedUpdate(Character __instance, float dt)
+        {
+            if (__instance.TryGetComponent(out DrainVictim victim)) victim.FixedStep(dt);
+        }
 
         private static bool Hold(BaseAI ai, ref bool result)
         {

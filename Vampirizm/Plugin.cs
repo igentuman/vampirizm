@@ -31,9 +31,10 @@ namespace Vampirizm
         {
             Instance = this;
             Settings = new VampireConfig(Config);
-            BloodItemRegistry.Initialize(Settings.BloodItems);
-            SilverRegistry.Initialize(Settings.SilverItems);
+            BloodItemRegistry.Initialize(Settings.BloodItems, Settings.AllowMeads);
+            SilverRegistry.Initialize(Settings.SilverItems, Settings.SilverContactItems);
             DonorRegistry.Initialize(Settings.Donors, Settings.NeverDonors, Settings.NoHoldDonors);
+            FriendlyRegistry.Initialize(Settings.FriendlyCreatures);
             VampireLocalization.Register();
             VampirismSkill.Register();
             VampireRune.Register();
@@ -60,11 +61,23 @@ namespace Vampirizm
         internal static void Warn(string message) => Instance?.Logger.LogWarning(message);
         internal static void LogInfo(string message) => Instance?.Logger.LogInfo(message);
 
+        internal static void SaveControlSettings()
+        {
+            try
+            {
+                Instance?.Config.Save();
+            }
+            catch (Exception exception)
+            {
+                Warn($"Could not save ability controls: {exception}");
+            }
+        }
+
         private void OnDestroy()
         {
             _harmony?.UnpatchSelf();
             foreach (var controller in UnityEngine.Object.FindObjectsByType<Core.VampireController>(UnityEngine.FindObjectsSortMode.None))
-                controller.Invisibility?.End();
+                controller.Invisibility?.End(false);
             Instance = null;
         }
     }

@@ -48,7 +48,7 @@ namespace Vampirizm.Controls
             }
             for (int i = intoFirst; i < missing.Count; i++)
             {
-                KeySetting row = CloneRow(keys[keys.Count - 1], keys[keys.Count - 2], missing[i], 1);
+                KeySetting row = CloneRow(keys[keys.Count - 1], keys[keys.Count - 2], missing[i], 1, appendAtEnd: true);
                 if (row != null) keys.Add(row);
             }
             Rows(__instance) = Mathf.CeilToInt((float)keys.Count / columns);
@@ -61,7 +61,8 @@ namespace Vampirizm.Controls
             if (Plugin.Instance != null) Plugin.Instance.StartCoroutine(ScrollAfterLayout(__instance));
         }
 
-        private static KeySetting CloneRow(KeySetting template, KeySetting previous, VampireBinding binding, int offset)
+        private static KeySetting CloneRow(KeySetting template, KeySetting previous, VampireBinding binding, int offset,
+            bool appendAtEnd = false)
         {
             RectTransform templateRect = template.m_keyTransform;
             RectTransform previousRect = previous.m_keyTransform;
@@ -71,8 +72,10 @@ namespace Vampirizm.Controls
             clone.name = "VampirizmControl_" + binding.Action;
             var rect = (RectTransform)clone.transform;
             rect.anchoredPosition = templateRect.anchoredPosition + step * offset;
-            // Layout follows sibling order, not m_keys order.
-            rect.SetSiblingIndex(templateRect.GetSiblingIndex() + offset);
+            // Layout follows sibling order, not m_keys order. Rows inserted into the first
+            // column go beside that column's template; overflow rows extend the final column.
+            if (appendAtEnd) rect.SetAsLastSibling();
+            else rect.SetSiblingIndex(templateRect.GetSiblingIndex() + offset);
 
             Button button = clone.GetComponentInChildren<Button>(true);
             foreach (TMP_Text text in clone.GetComponentsInChildren<TMP_Text>(true))

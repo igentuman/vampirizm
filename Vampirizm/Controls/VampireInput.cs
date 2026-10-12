@@ -55,6 +55,10 @@ namespace Vampirizm.Controls
             // Valheim cancels interactive rebinding on any gamepad input, so gamepad buttons are set only here.
             var gamepadEntry = config.Bind("Controls", title + " gamepad button", InputManager.GamepadButton.None,
                 "Gamepad button; None disables it. Every gamepad button already has a vanilla action, so pick one you do not use.");
+            // These settings are local. Save immediately so keyboard rebinds and gamepad edits
+            // survive a crash or a relaunch without depending on a later config shutdown save.
+            keyEntry.SettingChanged += (sender, args) => Plugin.SaveControlSettings();
+            gamepadEntry.SettingChanged += (sender, args) => Plugin.SaveControlSettings();
             var button = new ButtonConfig
             {
                 Name = "Vampirizm" + action,
@@ -80,6 +84,7 @@ namespace Vampirizm.Controls
         internal static void MirrorRebinds()
         {
             if (ZInput.instance == null) return;
+            bool changed = false;
             foreach (VampireBinding binding in All)
             {
                 try
@@ -93,13 +98,21 @@ namespace Vampirizm.Controls
                         Plugin.Warn($"Cannot save {binding.Action} binding with unsupported input path: {path}");
                         continue;
                     }
-                    if (binding.Key.Value != key) binding.Key.Value = key;
+                    if (binding.Key.Value != key)
+                    {
+                        binding.Key.Value = key;
+                        changed = true;
+                    }
                 }
                 catch (Exception exception)
                 {
                     Plugin.Warn($"Cannot save {binding.Action} binding: {exception}");
                 }
             }
+
+            // SettingChanged normally saves this too; explicitly flush after the complete
+            // rebind so all three bindings are written together after Valheim's own save.
+            if (changed) Plugin.SaveControlSettings();
         }
 
         private static Dictionary<string, KeyCode> KeysByPath()

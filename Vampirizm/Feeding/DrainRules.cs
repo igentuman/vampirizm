@@ -33,6 +33,18 @@ namespace Vampirizm.Feeding
             if (!BloodRules.IsFinite(maxDuration) || !BloodRules.IsFinite(interval) || interval <= 0f) return 1;
             return Math.Max(1, (int)Math.Ceiling(maxDuration / interval));
         }
+
+        // Tick 1 only claims the victim; damage tick k lands at the end of its interval, the last one at the session end.
+        public const int ClaimTick = 1;
+
+        public static int SessionTicks(float maxDuration, float interval) => ClaimTick + MaxTicks(maxDuration, interval);
+
+        public static float TickOffset(int tick, float maxDuration, float interval)
+        {
+            if (tick <= ClaimTick) return 0f;
+            if (!BloodRules.IsFinite(maxDuration) || !BloodRules.IsFinite(interval) || interval <= 0f) return 0f;
+            return Math.Min((tick - ClaimTick) * interval, Math.Max(0f, maxDuration));
+        }
     }
 
     // Victim-owner side: one active session per victim, ticks strictly in order, each processed once.
@@ -46,6 +58,7 @@ namespace Vampirizm.Feeding
 
         public bool IsActive(float now, float timeout) => _active && now - _last <= timeout;
         public long Attacker => _attacker;
+        public int Session => _session;
 
         public DrainVerdict Accept(long attacker, int session, int tick, float now, float timeout, int maxTicks)
         {

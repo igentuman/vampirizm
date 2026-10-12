@@ -16,6 +16,7 @@ namespace Vampirizm.Abilities
         private float _drainTimer;
         private float _syncTimer;
         private bool _active;
+        private bool _remoteSynced;
 
         internal InvisibilityAbility(Player player, VampireController controller)
         {
@@ -55,6 +56,7 @@ namespace Vampirizm.Abilities
             _drainTimer = 0f;
             _visual.SetActive(true);
             VampireNetwork.SetInvisible(_player.GetComponent<ZNetView>(), true);
+            Puff(true);
             _player.Message(MessageHud.MessageType.TopLeft, "$vampirizm_invisibility_on");
         }
 
@@ -87,19 +89,35 @@ namespace Vampirizm.Abilities
             if (_syncTimer > 0f) return;
             _syncTimer = 0.2f;
             bool invisible = VampireNetwork.IsInvisible(_player);
+            bool synced = _remoteSynced;
+            _remoteSynced = true;
             if (_active == invisible) return;
             _active = invisible;
             if (_player != Player.m_localPlayer) SetCharacterVisible(_player, !invisible);
+            // The first read only adopts the current state: a peer already hidden on arrival does not puff.
+            if (synced) Puff(false);
         }
 
-        internal void End()
+        // Teardown passes effects = false: nothing should spawn while the player or plugin is being destroyed.
+        internal void End(bool effects = true)
         {
+            bool wasActive = _active;
             _active = false;
             _drainTimer = 0f;
             _visual.SetActive(false);
             if (_player == null) return;
             VampireNetwork.SetInvisible(_player.GetComponent<ZNetView>(), false);
+            if (effects && wasActive && _player == Player.m_localPlayer) Puff(true);
             if (_player != Player.m_localPlayer) SetCharacterVisible(_player, true);
+        }
+
+        private void Puff(bool local)
+        {
+            var settings = Plugin.Instance?.Settings;
+            if (settings == null) return;
+            Vector3 point = _player.GetCenterPoint();
+            EffectSpawner.Spawn(settings.InvisibilityEffect.Value, point, Quaternion.identity, 1f, local);
+            EffectSpawner.Spawn(settings.InvisibilitySound.Value, point, Quaternion.identity, 1f, local);
         }
 
         private bool IsBusy()

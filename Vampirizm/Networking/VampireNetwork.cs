@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Vampirizm.Core;
 
 namespace Vampirizm.Networking
@@ -9,6 +10,19 @@ namespace Vampirizm.Networking
         internal const string LevelKey = "com.igentuman.vampirizm.level";
         internal const string InvisibleKey = "com.igentuman.vampirizm.invisible";
         internal const string BatFormKey = "com.igentuman.vampirizm.batform";
+        internal const string DrinkTargetKey = "com.igentuman.vampirizm.drinktarget";
+        private static readonly KeyValuePair<int, int> DrinkTargetHash = ZDO.GetHashZDOID(DrinkTargetKey);
+
+        // Cosmetic only: tells every client whom this vampire is drinking from, for the blood splats and sound.
+        internal static void SetDrinkTarget(ZNetView view, ZDOID target)
+        {
+            if (view == null || !view.IsValid() || !view.IsOwner()) return;
+            ZDO zdo = view.GetZDO();
+            if (zdo.GetZDOID(DrinkTargetHash) != target) zdo.Set(DrinkTargetHash, target);
+        }
+
+        internal static ZDOID GetDrinkTarget(ZNetView view)
+            => view != null && view.IsValid() ? view.GetZDO().GetZDOID(DrinkTargetHash) : ZDOID.None;
 
         internal static void SetInvisible(ZNetView view, bool invisible)
         {

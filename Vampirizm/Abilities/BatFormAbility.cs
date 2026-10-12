@@ -11,6 +11,8 @@ namespace Vampirizm.Abilities
     {
         private static readonly AccessTools.FieldRef<Character, Rigidbody> Body =
             AccessTools.FieldRefAccess<Character, Rigidbody>("m_body");
+        private static readonly AccessTools.FieldRef<Character, float> MaxAirAltitude =
+            AccessTools.FieldRefAccess<Character, float>("m_maxAirAltitude");
         private readonly Player _player;
         private readonly VampireController _controller;
         private GameObject _humanVisual;
@@ -19,9 +21,15 @@ namespace Vampirizm.Abilities
         private bool _oldGravity;
         private bool _rise;
         private bool _descend;
+        private bool _sprint;
         private bool _inputAllowed = true;
         private Vector3 _move;
         private float _drainTimer;
+        private float _nextNoise;
+        private float _nextFlap;
+        // Remote players: last bat state seen, so a peer already flying on arrival does not play the transformation.
+        private bool _remoteBat;
+        private bool _remoteSynced;
 
         internal BatFormAbility(Player player, VampireController controller)
         {
@@ -63,18 +71,20 @@ namespace Vampirizm.Abilities
             if (_humanVisual != null && _batVisual != null) _humanVisual.SetActive(false);
             if (_batVisual == null) Plugin.Warn("Bat prefab/model is unavailable; flight will retain the player model.");
             VampireNetwork.SetBatForm(_player.GetComponent<ZNetView>(), true);
-            BatTransformationEffect.Play(_player.transform.position);
+            PlayTransformation(true);
+            ScheduleAmbient();
             _player.Message(MessageHud.MessageType.TopLeft, "$vampirizm_batform_on");
         }
 
         // Set from Player.SetControls. movedir is raw keyboard/stick input, not a world direction.
         internal void SetInputAllowed(bool allowed) => _inputAllowed = allowed;
 
-        internal void SetControls(Vector3 movedir, bool jump, bool crouch)
+        internal void SetControls(Vector3 movedir, bool run)
         {
             if (!_active) return;
             _move = _inputAllowed ? movedir : Vector3.zero;
             _move.y = 0f;
+            _sprint = _inputAllowed && run;
             // PlayerController passes jump/crouch as key-down events. Poll held state so
             // flight continues for the whole time the key is held.
             _rise = _inputAllowed && (ZInput.GetButton("Jump") || ZInput.GetButton("JoyJump"));
@@ -86,6 +96,7 @@ namespace Vampirizm.Abilities
             if (!_active)
             {
                 UpdateRemoteVisual();
+                if (_remoteBat) UpdateAmbient(false);
                 return;
             }
             if (!_controller.IsActiveVampire || !_controller.CanChange || _player.IsDead() ||
@@ -113,14 +124,17 @@ namespace Vampirizm.Abilities
             else if (_controller.State.Blood <= 0f)
             {
                 End(true);
+                return;
             }
+            UpdateAmbient(true);
         }
 
         // Called immediately after vanilla walking has written its velocity.
         internal void FixedStep()
         {
             if (!_active) return;
-            float speed = Plugin.Instance.Settings.BatFormSpeed.Value;
+            var settings = Plugin.Instance.Settings;
+            float speed = settings.BatFormSpeed.Value * (_sprint ? settings.BatSprintMultiplier.Value : 1f);
             Vector3 forward = GameCamera.instance != null ? GameCamera.instance.transform.forward : _player.GetLookDir();
             forward.y = 0f;
             if (forward.sqrMagnitude < 0.001f) forward = _player.transform.forward;
@@ -129,8 +143,14 @@ namespace Vampirizm.Abilities
             Vector3 horizontal = (forward * _move.z + right * _move.x) * speed;
             float vertical = (_rise ? 1f : 0f) - (_descend ? 1f : 0f);
             Rigidbody body = Body(_player);
+            // Character.UpdateWalking enables gravity every step. Keep it disabled after
+            // vanilla movement so a bat with no vertical input can hover in place.
+            body.useGravity = false;
             body.linearVelocity = new Vector3(horizontal.x, vertical * speed, horizontal.z);
             body.angularVelocity = Vector3.zero;
+            // Valheim uses this peak altitude to calculate landing damage. Flight should
+            // not build up a fall distance, even if ground contact is briefly lost.
+            MaxAirAltitude(_player) = _player.transform.position.y;
         }
 
         internal void End(bool effect)
@@ -142,7 +162,7 @@ namespace Vampirizm.Abilities
             }
             _active = false;
             _move = Vector3.zero;
-            _rise = _descend = false;
+            _rise = _descend = _sprint = false;
             _drainTimer = 0f;
             if (_player != null)
             {
@@ -155,11 +175,44 @@ namespace Vampirizm.Abilities
                 VampireNetwork.SetBatForm(_player.GetComponent<ZNetView>(), false);
                 if (_humanVisual != null) _humanVisual.SetActive(true);
                 if (_batVisual != null) Object.Destroy(_batVisual);
-                if (effect) BatTransformationEffect.Play(_player.transform.position);
+                if (effect) PlayTransformation(true);
                 if (effect) _player.Message(MessageHud.MessageType.TopLeft, "$vampirizm_batform_off");
             }
             _batVisual = null;
         }
+
+        // The owner passes local = true and also spawns networked sound prefabs; peers spawn only plain local ones.
+        private void PlayTransformation(bool local)
+        {
+            BatTransformationEffect.Play(_player.transform.position);
+            var settings = Plugin.Instance?.Settings;
+            if (settings != null) EffectSpawner.SpawnAll(settings.BatTransformSounds.Value, _player.GetCenterPoint(), local);
+        }
+
+        private void ScheduleAmbient()
+        {
+            var settings = Plugin.Instance.Settings;
+            _nextNoise = Time.time + Jitter(settings.BatNoiseInterval.Value);
+            _nextFlap = Time.time + Jitter(settings.BatFlapInterval.Value);
+        }
+
+        // Occasional squeaks and wing flaps while flying.
+        private void UpdateAmbient(bool local)
+        {
+            var settings = Plugin.Instance.Settings;
+            if (Time.time >= _nextNoise)
+            {
+                _nextNoise = Time.time + Jitter(settings.BatNoiseInterval.Value);
+                EffectSpawner.SpawnRandom(settings.BatNoiseSounds.Value, _player.GetCenterPoint(), local);
+            }
+            if (Time.time >= _nextFlap)
+            {
+                _nextFlap = Time.time + Jitter(settings.BatFlapInterval.Value);
+                EffectSpawner.SpawnRandom(settings.BatFlapSounds.Value, _player.GetCenterPoint(), local);
+            }
+        }
+
+        private static float Jitter(float interval) => interval * Random.Range(0.5f, 1.5f);
 
         private bool IsBusy()
             => !_controller.CanChange || _controller.Drain.Active || _controller.Dash.Active || _active ||
@@ -228,6 +281,13 @@ namespace Vampirizm.Abilities
         {
             if (_player == null || _player == Player.m_localPlayer) return;
             bool bat = VampireNetwork.IsBatForm(_player);
+            if (bat != _remoteBat || !_remoteSynced)
+            {
+                if (_remoteSynced && Plugin.Instance != null) PlayTransformation(false);
+                if (bat && Plugin.Instance != null) ScheduleAmbient();
+                _remoteBat = bat;
+                _remoteSynced = true;
+            }
             if (bat == (_batVisual != null)) return;
             if (bat)
             {

@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using Vampirizm.Combat;
 using Vampirizm.Networking;
+using Vampirizm.Skills;
 
 namespace Vampirizm.Patches
 {
@@ -50,6 +51,18 @@ namespace Vampirizm.Patches
         {
             HitSource.Exit(state);
             return exception;
+        }
+
+        // Runs on the attacker's client for every hit an attack builds. Bare hands use the humanoid's unarmed item.
+        [HarmonyPostfix, HarmonyPatch(typeof(Attack), "ModifyDamage")]
+        private static void AfterModifyDamage(HitData hitData, Humanoid ___m_character, ItemDrop.ItemData ___m_weapon)
+        {
+            if (hitData == null || Plugin.Instance == null || !(___m_character is Player player)) return;
+            if (___m_weapon == null || player.m_unarmedWeapon == null || ___m_weapon != player.m_unarmedWeapon.m_itemData) return;
+            if (!VampireNetwork.IsVampire(player)) return;
+            float factor = VampireDamageRules.UnarmedMultiplier(VampirismSkill.Level(player),
+                Plugin.Instance.Settings.UnarmedDamageMultiplier.Value);
+            if (factor != 1f) hitData.m_damage.Modify(factor);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(Character), nameof(Character.Damage))]

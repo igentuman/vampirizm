@@ -46,7 +46,7 @@ namespace Vampirizm.Patches
         {
             if (item == null || ActiveVampire(__instance) == null) return true;
             // Keep the inventory action enabled so Humanoid.UseItem can route the request to BloodFeeding.
-            // The UseItem prefix consumes it here and EatFood remains blocked as a final vanilla guard.
+            // The UseItem prefix consumes it here and EatFood reroutes it as a final vanilla guard.
             if (BloodItemRegistry.IsBloodItem(item))
             {
                 __result = true;
@@ -58,17 +58,12 @@ namespace Vampirizm.Patches
             return false;
         }
 
-        // Last guard for callers that skip CanConsumeItem.
+        // Last guard for callers that skip CanConsumeItem: blood items go to BloodFeeding, ordinary food is refused.
         [HarmonyPrefix, HarmonyPatch(typeof(Player), nameof(Player.EatFood))]
         private static bool BeforeEatFood(Player __instance, ItemDrop.ItemData item, ref bool __result)
         {
-            if (ActiveVampire(__instance) == null) return true;
-            if (BloodItemRegistry.IsBloodItem(item))
-            {
-                __result = BloodFeeding.TryDrink(__instance, __instance.GetInventory(), item);
-                return false;
-            }
-            __result = false;
+            if (item == null || ActiveVampire(__instance) == null) return true;
+            __result = BloodItemRegistry.IsBloodItem(item) && BloodFeeding.TryDrink(__instance, __instance.GetInventory(), item);
             return false;
         }
 

@@ -45,6 +45,13 @@ namespace Vampirizm.Core
             return drained;
         }
 
+        // Death keeps only a fraction of stored blood; returns the amount lost.
+        public float LoseOnDeath(float keptFraction)
+        {
+            if (!IsVampire) return 0f;
+            return Drain(Blood * (1f - BloodRules.Clamp(keptFraction, 1f)));
+        }
+
         public bool TrySpend(float amount)
         {
             if (!IsVampire || !BloodRules.IsFinite(amount) || amount <= 0f || Blood < amount) return false;

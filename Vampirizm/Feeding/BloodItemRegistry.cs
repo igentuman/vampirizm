@@ -7,11 +7,13 @@ namespace Vampirizm.Feeding
     internal static class BloodItemRegistry
     {
         private static ConfigEntry<string> _source;
+        private static ConfigEntry<bool> _allowMeads;
         private static Dictionary<string, float> _table = new Dictionary<string, float>();
 
-        internal static void Initialize(ConfigEntry<string> source)
+        internal static void Initialize(ConfigEntry<string> source, ConfigEntry<bool> allowMeads)
         {
             _source = source;
+            _allowMeads = allowMeads;
             _source.SettingChanged += (_, __) => Rebuild();
             Rebuild();
         }
@@ -35,15 +37,17 @@ namespace Vampirizm.Feeding
 
         internal static bool IsBloodItem(ItemDrop.ItemData item) => TryGetBlood(item, out _);
 
-        // Every vanilla food and mead: anything consumable that feeds or applies a status effect.
+        internal static bool IsBloodId(string id) => id != null && _table.ContainsKey(id);
+
+        // Every vanilla food, and meads unless allowed: a mead applies a status effect and feeds nothing.
         // Consumable ammo such as fishing bait has neither and stays usable.
         internal static bool IsForbiddenConsumable(ItemDrop.ItemData item)
         {
             if (item == null || item.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Consumable) return false;
             if (IsBloodItem(item)) return false;
             ItemDrop.ItemData.SharedData shared = item.m_shared;
-            return shared.m_food > 0f || shared.m_foodStamina > 0f || shared.m_foodEitr > 0f ||
-                   shared.m_consumeStatusEffect != null;
+            if (shared.m_food > 0f || shared.m_foodStamina > 0f || shared.m_foodEitr > 0f) return true;
+            return shared.m_consumeStatusEffect != null && _allowMeads?.Value != true;
         }
     }
 }

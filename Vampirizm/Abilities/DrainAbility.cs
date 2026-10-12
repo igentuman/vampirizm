@@ -7,8 +7,11 @@ using Vampirizm.Skills;
 
 namespace Vampirizm.Abilities
 {
-    // Vampire-side bite: hold the secondary attack with empty hands. Blood and experience arrive
-    // only through confirmed ticks from the victim owner; every interruption ends the session.
+    // Vampire-side bite: one press of the secondary attack with empty hands plays the whole drinking action,
+    // which always lasts the session length. The first tick only claims the victim; damage, blood and experience
+    // arrive through confirmed ticks at the end of each interval, the last one at the session end.
+    // When draining stops early (full bar, expired, lost) the action still plays out.
+    // Only real interruptions (stagger, big hit, escape, death, teleport) end it before time.
     internal sealed class DrainAbility
     {
         private const float RangeTolerance = 0.75f;
@@ -17,14 +20,17 @@ namespace Vampirizm.Abilities
         private static readonly AccessTools.FieldRef<Character, Vector3> LookDir = AccessTools.FieldRefAccess<Character, Vector3>("m_lookDir");
         private static readonly System.Action<Player> StopEmote =
             AccessTools.MethodDelegate<System.Action<Player>>(AccessTools.Method(typeof(Player), "StopEmote"));
+        private static readonly AccessTools.FieldRef<Character, Animator> AnimatorRef = AccessTools.FieldRefAccess<Character, Animator>("m_animator");
 
         private readonly Player _player;
+        private readonly ZNetView _view;
         private readonly VampireController _controller;
         private readonly DrainTracker _tracker = new DrainTracker();
         private Character _target;
         private bool _active;
-        private bool _held;
         private bool _emote;
+        private float _emoteSpeed;
+        private bool _draining;
         private float _started;
         private float _nextTick;
         private float _sentAt;
@@ -34,15 +40,16 @@ namespace Vampirizm.Abilities
         internal DrainAbility(Player player, VampireController controller)
         {
             _player = player;
+            _view = player.GetComponent<ZNetView>();
             _controller = controller;
         }
 
         internal bool Active => _active;
 
-        // From Player.SetControls: pressed starts a bite, releasing the button ends it.
-        internal void Input(bool pressed, bool held)
+        // From Player.SetControls: a press starts a bite that runs to the end of the session.
+        // Releasing the button must not end it, or the drinking emote is stopped before it plays.
+        internal void Input(bool pressed)
         {
-            _held = held;
             if (pressed && !_active) TryStart();
         }
 
@@ -80,16 +87,19 @@ namespace Vampirizm.Abilities
             }
             _target = target;
             _active = true;
+            _draining = true;
+            _emoteSpeed = 0f;
             _tracker.Start(Random.Range(1, int.MaxValue));
             _started = Time.time;
             _nextTick = Time.time;
             _lastHealth = _player.GetHealth();
-            string emote = settings.BiteEmote.Value.Trim();
-            _emote = emote.Length > 0 && _player.StartEmote(emote, false);
+            VampireNetwork.SetDrinkTarget(_view, target.GetZDOID());
+            // A bat has no visible body to emote with, and emoting would end the bat form.
+            string emote = settings.BiteEmote.Value.Trim().ToLowerInvariant();
+            _emote = emote.Length > 0 && !_controller.BatForm.Active && _player.StartEmote(emote, IsOneShot(emote));
             if (!_emote) PlayAnimation();
         }
 
-        // Runs every frame on the owning client.
         internal void Update()
         {
             if (!_active) return;
@@ -100,10 +110,18 @@ namespace Vampirizm.Abilities
                 return;
             }
             FaceTarget();
-            float interval = Plugin.Instance.Settings.BiteInterval.Value;
+            UpdateEmoteSpeed();
+            var settings = Plugin.Instance.Settings;
+            if (!_draining)
+            {
+                if (Time.time - _started > settings.BiteMaxDuration.Value) End("");
+                return;
+            }
+            float interval = settings.BiteInterval.Value;
+            // The final tick is due at the session end, so the session waits for its confirmation.
             if (_tracker.Awaiting)
             {
-                if (Time.time - _sentAt > DrainNetwork.Timeout(interval)) End("$vampirizm_bite_lost");
+                if (Time.time - _sentAt > DrainNetwork.Timeout(interval)) StopDraining("$vampirizm_bite_lost");
                 return;
             }
             if (Time.time < _nextTick) return;
@@ -115,6 +133,11 @@ namespace Vampirizm.Abilities
         {
             // Duplicate, stale and foreign confirmations are ignored.
             if (!_active || !_tracker.Confirm(session, tick)) return;
+            if (status == DrainStatus.Expired || status == DrainStatus.Stale)
+            {
+                StopDraining(null);
+                return;
+            }
             if (status != DrainStatus.Ok)
             {
                 End(StatusMessage(status));
@@ -124,10 +147,42 @@ namespace Vampirizm.Abilities
             float accepted = _controller.AddBlood(blood);
             float xp = DrainRules.Experience(accepted, settings.XpPerBlood.Value, xpAllowed);
             if (xp > 0f) _player.RaiseSkill(VampirismSkill.Type, xp);
-            if (!_emote) PlayAnimation();
-            _nextTick = Time.time + settings.BiteInterval.Value;
+            if (!_emote && tick > DrainRules.ClaimTick) PlayAnimation();
+            float duration = settings.BiteMaxDuration.Value;
+            float interval = settings.BiteInterval.Value;
             if (died) End("$vampirizm_bite_victim_died");
-            else if (BloodRules.IsFull(_controller.State.Blood, _controller.Capacity)) End("$vampirizm_blood_full");
+            else if (BloodRules.IsFull(_controller.State.Blood, _controller.Capacity)) StopDraining("$vampirizm_blood_full");
+            else if (tick >= DrainRules.SessionTicks(duration, interval)) StopDraining(null);
+            else _nextTick = _started + DrainRules.TickOffset(tick + 1, duration, interval);
+        }
+
+        // No more ticks are requested; the animation, hold and effects continue until the session length.
+        private void StopDraining(string message)
+        {
+            _draining = false;
+            if (!string.IsNullOrEmpty(message)) _player.Message(MessageHud.MessageType.Center, message);
+        }
+
+        // Animator speed replicates through ZSyncAnimation; vanilla resets it to 1 once the emote is over.
+        // With the automatic speed, the emote clip is stretched once its state starts so it ends with the session.
+        private void UpdateEmoteSpeed()
+        {
+            if (!_emote || !_player.InEmote()) return;
+            var settings = Plugin.Instance.Settings;
+            if (_emoteSpeed <= 0f)
+            {
+                _emoteSpeed = settings.BiteEmoteSpeed.Value;
+                Animator animator = AnimatorRef(_player);
+                float remaining = settings.BiteMaxDuration.Value - (Time.time - _started);
+                if (_emoteSpeed <= 0f && animator != null && remaining > 0.1f)
+                {
+                    AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+                    float left = state.length * (1f - Mathf.Repeat(state.normalizedTime, 1f));
+                    _emoteSpeed = left > 0f ? Mathf.Clamp(left / remaining, 0.05f, 2f) : 1f;
+                }
+                if (_emoteSpeed <= 0f) _emoteSpeed = 1f;
+            }
+            _player.GetZAnim().SetSpeed(_emoteSpeed);
         }
 
         // Idempotent: safe from death, teleport, cure and component destruction. Empty message ends silently.
@@ -135,9 +190,15 @@ namespace Vampirizm.Abilities
         {
             if (!_active) return;
             _active = false;
+            DrainNetwork.RequestRelease(_target, _tracker.Session);
             _target = null;
             if (Plugin.Instance != null) _cooldownUntil = Time.time + Plugin.Instance.Settings.BiteCooldown.Value;
-            if (_emote && _player != null) StopEmote(_player);
+            VampireNetwork.SetDrinkTarget(_view, ZDOID.None);
+            if (_emote && _view != null && _view.IsValid())
+            {
+                StopEmote(_player);
+                _player.GetZAnim().SetSpeed(1f);
+            }
             _emote = false;
             if (!string.IsNullOrEmpty(message) && _player != null) _player.Message(MessageHud.MessageType.Center, message);
         }
@@ -145,7 +206,6 @@ namespace Vampirizm.Abilities
         private string InterruptReason()
         {
             var settings = Plugin.Instance.Settings;
-            if (!_held) return "";
             if (!_controller.IsActiveVampire || !_controller.CanChange || _player.IsTeleporting()) return "";
             if (_player.IsStaggering()) return "$vampirizm_bite_interrupted";
             float health = _player.GetHealth();
@@ -156,7 +216,6 @@ namespace Vampirizm.Abilities
             float range = settings.BiteRange.Value + RangeTolerance;
             if ((_target.transform.position - _player.transform.position).sqrMagnitude > range * range ||
                 !InSight(_target)) return "$vampirizm_bite_escaped";
-            if (Time.time - _started > settings.BiteMaxDuration.Value) return "";
             return null;
         }
 
@@ -192,9 +251,10 @@ namespace Vampirizm.Abilities
 
         private bool InSight(Character character) => !Physics.Linecast(_player.GetEyePoint(), character.GetCenterPoint(), SightMask);
 
+        // Faces the victim's center, which a lifted victim keeps on the vampire's forward line.
         private void FaceTarget()
         {
-            Vector3 direction = _target.transform.position - _player.transform.position;
+            Vector3 direction = _target.GetCenterPoint() - _player.transform.position;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.001f) return;
             LookDir(_player) = direction.normalized;
@@ -202,6 +262,10 @@ namespace Vampirizm.Abilities
         }
 
         private void PlayAnimation() => _player.GetZAnim().SetTrigger("interact");
+
+        // Vanilla loops only emotes marked as such (sit); the rest exist in the animator as one-shot triggers.
+        private static bool IsOneShot(string emote)
+            => !System.Enum.TryParse(emote, true, out Emotes parsed) || (parsed.GetAttributeOfType<Emote>()?.OneShot ?? true);
 
         private static string StatusMessage(DrainStatus status)
         {

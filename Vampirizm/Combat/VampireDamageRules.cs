@@ -34,5 +34,12 @@ namespace Vampirizm.Combat
             if (hasSpirit) return new DamageScale(1f, factor);
             return new DamageScale(1f, 1f);
         }
+
+        // Bare-handed damage grows linearly from 1× at skill 0 to the configured multiplier at skill 100.
+        public static float UnarmedMultiplier(float level, float maxMultiplier)
+        {
+            float max = BloodRules.IsFinite(maxMultiplier) ? System.Math.Max(1f, System.Math.Min(maxMultiplier, 100f)) : 1f;
+            return 1f + (max - 1f) * BloodRules.Clamp(level, 100f) / 100f;
+        }
     }
 }

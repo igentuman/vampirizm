@@ -11,7 +11,7 @@ namespace Vampirizm.Localization
             localization.AddTranslation("English", new Dictionary<string, string>
             {
                 ["vampirizm_skill"] = "Vampirism",
-                ["vampirizm_skill_description"] = "Increases blood capacity and unlocks vampire abilities.",
+                ["vampirizm_skill_description"] = "Increases blood capacity, grants eitr and unlocks vampire abilities.",
                 ["vampirizm_no_player"] = "Enter a world as a player first.",
                 ["vampirizm_devcommands_required"] = "Enable devcommands first.",
                 ["vampirizm_admin_required"] = "Requires server admin rights and Debug: Enable commands.",
@@ -23,9 +23,9 @@ namespace Vampirizm.Localization
                 ["vampirizm_blood_gained"] = "+$1 blood",
                 ["vampirizm_tooltip_blood"] = "<color=#d03030>Vampire: +$1 blood</color>",
                 ["vampirizm_tooltip_forbidden"] = "<color=#d03030>Vampires cannot consume this.</color>",
-                ["vampirizm_hud"] = "Blood {0:0}/{1:0} · Vampirism {2}",
-                ["vampirizm_hud_sun"] = " · <color=#ffb040>SUN</color>",
                 ["vampirizm_sun_warning"] = "The sun burns your skin! Find a roof or cover yourself in slime.",
+                ["vampirizm_silver_warning"] = "Silver burns your skin! Get rid of it.",
+                ["vampirizm_good_evening"] = "Good evening. The sun has set.",
                 ["vampirizm_slime_applied"] = "Slime protects you from the sun.",
                 ["vampirizm_slime_wet"] = "Slime will not stick to wet skin.",
                 ["vampirizm_slime_washed"] = "Water washed the slime off.",
@@ -74,7 +74,7 @@ namespace Vampirizm.Localization
             localization.AddTranslation("Russian", new Dictionary<string, string>
             {
                 ["vampirizm_skill"] = "Вампиризм",
-                ["vampirizm_skill_description"] = "Увеличивает запас крови и открывает способности вампира.",
+                ["vampirizm_skill_description"] = "Увеличивает запас крови, даёт эйтр и открывает способности вампира.",
                 ["vampirizm_no_player"] = "Сначала войдите в мир персонажем.",
                 ["vampirizm_devcommands_required"] = "Сначала включите devcommands.",
                 ["vampirizm_admin_required"] = "Нужны права администратора сервера и настройка Debug: Enable commands.",
@@ -86,9 +86,9 @@ namespace Vampirizm.Localization
                 ["vampirizm_blood_gained"] = "+$1 крови",
                 ["vampirizm_tooltip_blood"] = "<color=#d03030>Вампир: +$1 крови</color>",
                 ["vampirizm_tooltip_forbidden"] = "<color=#d03030>Вампиру это недоступно.</color>",
-                ["vampirizm_hud"] = "Кровь {0:0}/{1:0} · Вампиризм {2}",
-                ["vampirizm_hud_sun"] = " · <color=#ffb040>СОЛНЦЕ</color>",
                 ["vampirizm_sun_warning"] = "Солнце жжёт кожу! Найдите крышу или нанесите слизь.",
+                ["vampirizm_silver_warning"] = "Серебро жжёт кожу! Избавьтесь от него.",
+                ["vampirizm_good_evening"] = "Добрый вечер. Солнце село.",
                 ["vampirizm_slime_applied"] = "Слизь защищает от солнца.",
                 ["vampirizm_slime_wet"] = "Слизь не держится на мокрой коже.",
                 ["vampirizm_slime_washed"] = "Вода смыла слизь.",

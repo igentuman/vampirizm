@@ -28,7 +28,7 @@ namespace Vampirizm.Patches
             if (controller == null) return;
             if (controller.BatForm.Active)
             {
-                controller.BatForm.SetControls(movedir, jump, crouch);
+                controller.BatForm.SetControls(movedir, run);
                 attack = attackHold = false;
                 block = blockHold = false;
                 dodge = run = autoRun = false;

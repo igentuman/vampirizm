@@ -73,7 +73,6 @@ namespace Vampirizm.Abilities
             _endTime = Time.time + distance / speed * 1.5f + 0.1f;
         }
 
-        // Every frame on the owning client: cancel on anything incompatible.
         internal void Update()
         {
             if (!_active) return;
@@ -101,6 +100,15 @@ namespace Vampirizm.Abilities
             {
                 // Follow slopes instead of launching off them or pushing into them.
                 velocity = Vector3.ProjectOnPlane(velocity, _player.GetLastGroundNormal()).normalized * velocity.magnitude;
+                // The dash zeroes the move input, so vanilla applies standing friction, which drags the body
+                // against the ground for the whole step. Vanilla resets the material at the start of the next step.
+                CapsuleCollider capsule = _player.GetCollider();
+                if (capsule != null)
+                {
+                    capsule.material.staticFriction = 0f;
+                    capsule.material.dynamicFriction = 0f;
+                    capsule.material.frictionCombine = PhysicsMaterialCombine.Minimum;
+                }
             }
             else
             {

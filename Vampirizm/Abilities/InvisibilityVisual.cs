@@ -19,6 +19,8 @@ namespace Vampirizm.Abilities
             internal Material[] Original;
             internal Material[] Ghost;
             internal bool Applied;
+            internal bool Hidden;
+            internal bool WasForcedOff;
         }
 
         private readonly Player _player;
@@ -168,12 +170,22 @@ namespace Vampirizm.Abilities
             {
                 if (renderer == null) continue;
                 _seen.Add(renderer);
-                Material[] originals = renderer.sharedMaterials;
                 if (!_states.TryGetValue(renderer, out RendererState state))
                 {
                     state = new RendererState { Renderer = renderer };
                     _states.Add(renderer, state);
                 }
+                if (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))
+                {
+                    // Particles and trails have no surface to ghost: the spirit shader draws
+                    // their billboards as solid quads over the body. Hide them instead.
+                    state.WasForcedOff = renderer.forceRenderingOff;
+                    state.Hidden = true;
+                    state.Applied = true;
+                    renderer.forceRenderingOff = true;
+                    continue;
+                }
+                Material[] originals = renderer.sharedMaterials;
                 if (!SameMaterials(state.Original, originals))
                 {
                     DestroyMaterials(state.Ghost);
@@ -212,7 +224,11 @@ namespace Vampirizm.Abilities
             foreach (RendererState state in _states.Values)
             {
                 if (!state.Applied) continue;
-                if (state.Renderer != null) state.Renderer.sharedMaterials = state.Original;
+                if (state.Renderer != null)
+                {
+                    if (state.Hidden) state.Renderer.forceRenderingOff = state.WasForcedOff;
+                    else state.Renderer.sharedMaterials = state.Original;
+                }
                 state.Applied = false;
             }
             _cameras.Clear();

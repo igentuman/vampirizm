@@ -1,3 +1,4 @@
+using HarmonyLib;
 using UnityEngine;
 using Vampirizm.Conversion;
 using Vampirizm.Core;
@@ -16,6 +17,7 @@ namespace Vampirizm.Networking
         internal const string DrainResultRpc = "Vampirizm_DrainResult";
         internal const string BiteRpc = "Vampirizm_Bite";
         internal const string BiteResultRpc = "Vampirizm_BiteResult";
+        internal const string ReleaseRpc = "Vampirizm_DrainRelease";
         internal const string DrainedKey = "com.igentuman.vampirizm.drained";
         private const float DistanceTolerance = 2f;
         private static ZRoutedRpc _registeredOn;
@@ -27,7 +29,10 @@ namespace Vampirizm.Networking
             if (character is Player player)
                 view.Register<ZPackage>(BiteRpc, (sender, package) => OnBite(player, sender, package));
             else
+            {
                 view.Register<ZPackage>(DrainRpc, (sender, package) => OnDrain(character, sender, package));
+                view.Register<ZPackage>(ReleaseRpc, (sender, package) => OnRelease(character, sender, package));
+            }
         }
 
         internal static void RegisterRouted()
@@ -50,6 +55,16 @@ namespace Vampirizm.Networking
             package.Write(session);
             package.Write(tick);
             target.GetComponent<ZNetView>().InvokeRPC(DrainRpc, package);
+        }
+
+        // Lets the victim go as soon as the vampire stops instead of waiting for the session timeout.
+        internal static void RequestRelease(Character target, int session)
+        {
+            var view = target != null ? target.GetComponent<ZNetView>() : null;
+            if (view == null || !view.IsValid()) return;
+            var package = new ZPackage();
+            package.Write(session);
+            view.InvokeRPC(ReleaseRpc, package);
         }
 
         internal static void RequestBite(Player target, ZDOID attacker, string attackerName)
@@ -107,15 +122,19 @@ namespace Vampirizm.Networking
             var state = DrainVictim.Ensure(victim);
             float interval = settings.BiteInterval.Value;
             // One tick of slack absorbs network jitter at the session limit.
-            int maxTicks = DrainRules.MaxTicks(settings.BiteMaxDuration.Value, interval) + 1;
+            int maxTicks = DrainRules.SessionTicks(settings.BiteMaxDuration.Value, interval) + 1;
             DrainVerdict verdict = state.Ledger.Accept(sender, session, tick, Time.time, Timeout(interval), maxTicks);
             if (verdict != DrainVerdict.Accepted)
                 return verdict == DrainVerdict.Busy ? DrainStatus.Busy : verdict == DrainVerdict.Stale ? DrainStatus.Stale : DrainStatus.Expired;
             state.Held = DonorRegistry.CanHold(victim);
+            bool batBite = attackerZdo.GetBool(VampireNetwork.BatFormKey);
+            // A held victim is lifted to the vampire's mouth; a bat cannot carry it.
+            state.SetGlue(state.Held && !batBite ? attacker : ZDOID.None);
+            // The claim tick grabs the victim at once; damage comes at the end of each interval.
+            if (tick <= DrainRules.ClaimTick) return DrainStatus.Ok;
 
             float before = victim.GetHealth();
             var hit = new HitData();
-            bool batBite = attackerZdo.GetBool(VampireNetwork.BatFormKey);
             float requestedDamage = batBite ? settings.BatBiteDamage.Value : settings.BiteDamage.Value;
             hit.m_damage.m_damage = DrainRules.DealtDamage(requestedDamage, before);
             hit.m_attacker = attacker;
@@ -137,6 +156,15 @@ namespace Vampirizm.Networking
             died = victim.IsDead() || victim.GetHealth() <= 0f;
             if (died) state.Release();
             return DrainStatus.Ok;
+        }
+
+        private static void OnRelease(Character victim, long sender, ZPackage package)
+        {
+            var view = victim.GetComponent<ZNetView>();
+            if (view == null || !view.IsValid() || !view.IsOwner()) return;
+            int session = package.ReadInt();
+            var state = victim.GetComponent<DrainVictim>();
+            if (state != null && state.Ledger.Attacker == sender && state.Ledger.Session == session) state.Release();
         }
 
         private static void OnBite(Player victim, long sender, ZPackage package)
@@ -191,7 +219,16 @@ namespace Vampirizm.Networking
     // never leaves the creature's AI disabled.
     internal sealed class DrainVictim : MonoBehaviour
     {
+        // The victim's center is pulled in front of the vampire's face, sideways, just clear of its body.
+        private const float MouthHeight = 1.45f;
+        private const float BodyGap = 0.05f;
+        private const float PullRate = 6f;
+        private static readonly AccessTools.FieldRef<Character, Rigidbody> Body = AccessTools.FieldRefAccess<Character, Rigidbody>("m_body");
+
         private ZNetView _view;
+        private Character _character;
+        private ZDOID _glueTo = ZDOID.None;
+        private Player _vampire;
         internal readonly DrainLedger Ledger = new DrainLedger();
         internal bool Held { get; set; }
 
@@ -204,7 +241,56 @@ namespace Vampirizm.Networking
             return victim != null && victim.Held;
         }
 
-        private void Awake() => _view = GetComponent<ZNetView>();
+        private void Awake()
+        {
+            _view = GetComponent<ZNetView>();
+            _character = GetComponent<Character>();
+        }
+
+        internal void SetGlue(ZDOID vampire)
+        {
+            if (vampire == _glueTo) return;
+            _glueTo = vampire;
+            _vampire = null;
+        }
+
+        // From Character.CustomFixedUpdate, after vanilla motion: overrides this step's position and velocity.
+        internal void FixedStep(float dt)
+        {
+            if (!Held || _glueTo.IsNone() || _character == null || _view == null || !_view.IsOwner()) return;
+            if (_vampire == null)
+            {
+                GameObject instance = ZNetScene.instance != null ? ZNetScene.instance.FindInstance(_glueTo) : null;
+                _vampire = instance != null ? instance.GetComponent<Player>() : null;
+                if (_vampire == null) return;
+            }
+            Rigidbody body = Body(_character);
+            if (body == null) return;
+            Vector3 forward = _vampire.transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.001f) return;
+            forward.Normalize();
+
+            CapsuleCollider capsule = _character.GetCollider();
+            Vector3 scale = transform.lossyScale;
+            Vector3 center = capsule != null ? Vector3.Scale(capsule.center, scale) : Vector3.up * 0.5f;
+            // Held sideways, so the depth toward the vampire is the capsule's width, not its length.
+            float halfWidth = capsule == null ? 0.3f : (capsule.direction == 0 ? capsule.height * 0.5f : capsule.radius) * scale.x;
+
+            Quaternion rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, forward));
+            Vector3 mouth = _vampire.transform.position + Vector3.up * MouthHeight +
+                forward * (_vampire.GetRadius() + halfWidth + BodyGap);
+            Vector3 position = mouth - rotation * center;
+
+            float t = 1f - Mathf.Exp(-PullRate * dt);
+            position = Vector3.Lerp(body.position, position, t);
+            rotation = Quaternion.Slerp(body.rotation, rotation, t);
+            body.position = position;
+            body.rotation = rotation;
+            transform.SetPositionAndRotation(position, rotation);
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+        }
 
         private void Update()
         {
@@ -217,6 +303,7 @@ namespace Vampirizm.Networking
         {
             Ledger.Release();
             Held = false;
+            SetGlue(ZDOID.None);
         }
     }
 }

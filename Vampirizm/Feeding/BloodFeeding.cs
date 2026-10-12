@@ -1,6 +1,7 @@
 using System.Globalization;
 using UnityEngine;
 using Vampirizm.Core;
+using Vampirizm.Skills;
 
 namespace Vampirizm.Feeding
 {
@@ -24,8 +25,13 @@ namespace Vampirizm.Feeding
                 player.Message(MessageHud.MessageType.Center, "$vampirizm_blood_full");
                 return true;
             }
+            // The vanilla food check refusal shows the vanilla "can't eat more" or "full" message.
+            if (!VampireFood.CanDrink(player, item)) return true;
             if (!inventory.RemoveOneItem(item)) return true;
+            VampireFood.Fill(player, item);
             float accepted = controller.AddBlood(blood);
+            float xp = DrainRules.Experience(accepted, Plugin.Instance.Settings.XpPerItemBlood.Value, true);
+            if (xp > 0f) player.RaiseSkill(VampirismSkill.Type, xp);
             player.m_consumeItemEffects.Create(player.transform.position, Quaternion.identity, null, 1f, -1, player.GetZDOID());
             player.GetZAnim().SetTrigger("eat");
             player.Message(MessageHud.MessageType.Center, global::Localization.instance.Localize("$vampirizm_blood_gained",

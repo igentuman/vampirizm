@@ -2,16 +2,23 @@
 
 A vampirism mod for Valheim. Become a vampire, give up food, live on blood, hide from the sun, and level up the **Vampirism** skill to unlock a dash, invisibility and a bat form.
 
+New to the mod? Read the simple **[Player Guide](PLAYER_GUIDE.md)**.
+
 ## Features
 
 - **Vampire state and skill.** A new `Vampirism` skill (0–100) that grows by drinking blood. It is saved with the character and synced to other players.
-- **Blood instead of food.** Vampires cannot eat food or drink meads. Maximum health, stamina and regeneration come from stored blood. Blood drains slowly over time.
-- **Blood HUD.** A `Blood B/Bmax · Vampirism L` bar above the health panel replaces the food icons. It pulses when blood is low and shows "SUN" while you burn.
+- **Blood instead of food.** Vampires cannot eat food. Maximum health, stamina and regeneration come from stored blood. Meads still work. Blood drains slowly over time.
+- **Passive eitr.** From Vampirism level 50 you get an eitr bar that grows with the skill: 300 eitr and 11 eitr/s at level 100.
+- **Blood HUD.** A vertical blood bar with a blood drop icon sits right of the health bar and forsaken power and matches the health bar size. It pulses when blood is low.
 - **Drinking from items.** Raw meat and blood items can be drunk from the inventory or hotbar.
 - **Bite.** Drink blood directly from living creatures with a bare-handed bite. Works in multiplayer.
+- **Vampire fists.** Bare-handed damage grows with the skill: ×1 at level 0 up to ×5 at level 100.
 - **Weaknesses.**
-  - Sunlight burns you during the day when you are not under a roof.
+  - Sunlight burns you during the day when you are not under a roof. Rain halves it, thunderstorms stop it; it never burns in the Swamp or Mistlands and burns twice as hard in the Ashlands.
+  - The cold can't hurt you: no Cold or Freezing status effect.
   - Silver weapons and spirit damage deal ×2 damage to vampires.
+  - Carrying silver burns: 5 damage per second for each inventory stack of silver.
+- **Day sleep.** Vampires can sleep in their bed during the day and wake up at dusk.
 - **Slime protection.** Smear yourself with Ooze to resist the sun for a while. Water and rain wash it off.
 - **Conversion.**
   - Bite a willing player to turn them.
@@ -20,6 +27,7 @@ A vampirism mod for Valheim. Become a vampire, give up food, live on blood, hide
   - **Dash** (level 10): a short, fast burst of movement.
   - **Invisibility** (level 25): mobs and bosses ignore you and other players can't see you.
   - **Bat form** (level 50): fly as a bat and bite from the air.
+- **Bats are friendly.** Cave bats never attack vampires, even when hit. Vampires can still kill them.
 - **Rebindable controls** on Valheim's Controls tab, plus optional gamepad buttons.
 - **English and Russian** localization.
 - **Server-synced settings.** Gameplay settings come from the server (via Jotunn), so every player uses the same rules.
@@ -38,25 +46,30 @@ The server and all clients must run the same Vampirizm version, and Jotunn check
 
 You can be turned in one of two ways:
 
-- **Vampire Rune.** Craft it at a **Workbench** from `Leech trophy ×1 + Stone ×1 + Ruby ×2`. Use it from the inventory or hotbar **at night, in clear weather (no rain, storm, snow, mist, fog or ash), under open sky** (not under a roof or in a dungeon). If any of these conditions isn't met, you'll see the reason and the rune is not spent.
+- **Vampire Rune.** Craft it at a **Workbench** from `Leech trophy ×1 + Stone ×1 + Ruby ×2`. Use it from the inventory or hotbar **at night, in clear weather (no rain, storm, snow, mist, fog or ash), under open sky** (not under a roof or in a dungeon). If any of these conditions isn't met, you'll see the reason and the rune is not spent. When it works, a blood vortex gathers around you under a growing red glow, then red lightning strikes: a column of blood, a shockwave and a camera shake. Nearby players see it too.
 - **Bite from another vampire.** A vampire can turn you by biting, unless the server has disabled it or you turned off `Accept conversion by bite` in your local config.
 
 After you turn, your food is cleared and you start with 25% of your blood capacity.
 
 ### Living on blood
 
-- **No food.** Food and meads are refused and not used up. Bait and other non-food items still work.
+- **No food.** Food is refused and not used up; its tooltip says vampires cannot consume it. Meads still work (server setting `Allow meads`). Bait and other non-food items still work.
+- **Blood items in the food bar.** Drinking a blood item (raw meat, blood bags) puts it in the vanilla food list with a 20-minute timer (`Blood item food time`) that burns twice as fast (`Food burn multiplier`). Up to three different blood items fit, and the same one can be drunk again only once its icon starts blinking. That entry adds no food stats; the blood itself does.
 - **Blood capacity** is `100 + 2 × skill level`.
 - **More blood means more health and stamina:**
   - max HP = base HP + 0.8 × blood
   - max stamina = base stamina + 0.5 × blood
   - Every 10 seconds you regenerate 0.04 × blood HP.
   - Drinking does not heal you instantly.
+- **Eitr.** The skill gives eitr starting at level 50.
+  - max eitr = 50 + 5 × (skill level − 50), so 300 at level 100
+  - regen = 1 + 1 per 5 levels above 50 eitr/s, so 11/s at level 100. It does not depend on stored blood.
+  - This rate replaces vanilla's base eitr regen. Magic armor regen bonuses and status effects still multiply it, and it pauses for 1 s after you use eitr, as in vanilla.
 - **Drain.** You lose 3 blood per minute while playing. At zero blood you keep only your base HP and stamina.
 - **Drinking items.** Use raw meat or blood items from the inventory or hotbar. The tooltip shows how much blood each item gives.
   - With a full bar, nothing is consumed.
   - Blood beyond your capacity is lost.
-  - Items give no skill experience.
+  - Items give skill experience: 2 XP per unit of blood that actually entered your bar.
   - You can still put raw meat on a cooking station normally.
 
 | Item | Blood | Item | Blood |
@@ -73,31 +86,30 @@ Cooked dishes, fish and blood pudding give no blood.
 
 ### Biting
 
-To bite, have nothing in your hands (no weapon, shield or torch). Look at a creature within 2.5 m and **hold the secondary attack**.
+To bite, have nothing in your hands (no weapon, shield or torch). Look at a creature within 2.5 m and **press the secondary attack** once. The whole bite then plays out by itself and always takes 2 seconds.
 
 - **How it works.**
-  - While you bite, you hold still and face the victim.
-  - Every second the victim takes 6 damage, which armor does not reduce, and you gain 1.5 blood per point of damage.
-  - Most donors are held in place while you drink.
-- **When it stops.** The bite ends when:
-  - you release the button
-  - your blood bar fills
-  - 8 seconds pass
+  - While you bite, you hold still and face the victim, raising both hands to your face (the `cry` emote, stretched over the whole bite).
+  - At the end of every second the victim takes 6 damage, which armor does not reduce, and you gain 1.5 blood per point of damage. Nothing is dealt at the moment you bite; the last hit lands when the bite ends.
+  - Most donors are lifted up to your mouth and held there while you drink. Large donors and bat bites stay where they are.
+  - Small blood splats spray from the victim and a leech bite sound plays while you drink. Other players see and hear it too.
+- **When it stops.** The bite ends after 2 seconds. If your blood bar fills earlier, draining stops but the bite still plays out. It ends early only when:
   - you are staggered or take a big hit
   - the target moves out of range or out of sight
   - either of you dies
   - You then have to wait 4 seconds before biting again.
 - **Who you can bite.**
-  - Boars, deer, necks, hares, chickens/hens and goblins (Fulings) are donors.
+  - Boars, deer, necks, hares, chickens/hens, wolves, bjorns (bears), lox and goblins (Fulings) are donors.
   - Undead, greydwarves, blobs, surtlings, seekers, bosses and tamed creatures are never donors.
-  - Goblin Brutes give blood but are too big to hold.
-- **Experience.** You get skill experience only from bites, at 0.2 XP per unit of blood that actually entered your bar. A creature stops giving XP once you have drunk more blood from it than its max HP.
+  - Goblin Brutes and bjorns give blood but are too big to hold.
+- **Experience.** Bites give 4 XP per unit of blood that actually entered your bar (items give 2). A creature stops giving XP once you have drunk more blood from it than its max HP.
 - **Players.** Biting a player never gives blood. Instead, it can convert them (see above).
 
 ### Weaknesses
 
 - **Sun.**
-  - **When it burns:** during the day, outside, not under a roof and not in a dungeon. Clouds and rain don't protect you.
+  - **When it burns:** during the day, outside, not under a roof and not in a dungeon. Clouds and fog don't protect you. The sun stays harmless for the first 2 minutes after sunrise and the last 2 minutes before sunset.
+  - **Weather and biome:** rain halves the damage, a thunderstorm stops it. No burning at all in the Swamp and Mistlands; the Ashlands burn ×2. Weather and biome multiply (Ashlands rain = ×1).
   - **Timing:** you get a warning first, then after 3 seconds you take damage every 2 seconds.
   - **Damage:** 1 + 2% of max HP per tick. Armor, blocking and dodging don't help.
 - **Slime.** Use **Ooze** from the inventory to get 300 s of sun protection.
@@ -105,6 +117,14 @@ To bite, have nothing in your hands (no weapon, shield or torch). Look at a crea
   - Getting wet (rain, swimming) removes it at once, and you can't apply it while wet.
   - It does not survive relogging.
 - **Silver and spirit.** Silver weapons and arrows (sword, mace, knife, arrows), and any hit with spirit damage, deal ×2 damage to you. Silver plus spirit together is still ×2, not ×4.
+- **Carrying silver.** Silver in your inventory (ingots, ore, necklaces, silver weapons, arrows and shield) burns you for 5 damage every second **per stack**. A stack of 5 ingots, a silver sword and a silver necklace are 3 stacks, so 15 damage per second. Equipped items count too. Armor doesn't help.
+
+### Sleeping
+
+- A vampire can use its bed at any time of day, not only in the afternoon and at night. All other bed rules still apply: roof, fire, no enemies nearby, not wet, and the 30 s cooldown after waking.
+- **Day sleep.** If you go to bed between the vanilla wake-up time (early morning) and nightfall, and **every player in the world is a vampire in bed**, time skips to just after dusk. You wake with "Good evening" and the Rested bonus, and the sun no longer burns.
+- **Night sleep** works as in vanilla and skips to the next morning.
+- **Mixed groups.** Regular players can't go to bed in the morning or at noon, so a day sleep needs everyone to be a vampire. In the afternoon, when everyone can sleep, a group with at least one regular player skips to the next morning as usual.
 
 ### Abilities
 
@@ -117,15 +137,18 @@ Abilities unlock as your Vampirism skill grows. They work only when you are a va
 | Bat form | `B` (toggle) | level 50 | 5 extra blood/min while active |
 
 - **Dash.**
-  - You dash up to 8 m in the direction you are moving, or forward if you aren't moving.
+  - You dash up to 10 m in the direction you are moving, or forward if you aren't moving.
   - It stops just before walls, steep slopes and creatures. If there is no room, it doesn't start and costs nothing.
   - You can't dash in the air, in water, while biting, attacking, dodging, sitting, overweight or in build mode.
   - There is no invulnerability during a dash.
 - **Invisibility.**
   - Other players can't see you, and mobs and bosses won't target you. You see yourself as semi-transparent.
   - It ends when you attack, use an item, take damage, bite, dash, die or teleport, or when you press the key again.
+  - A puff of smoke and a ghostly sound mark the moment you fade or reappear. Other players see and hear it too.
 - **Bat form.**
   - You turn into a bat and fly. Movement keys steer, jump climbs and crouch descends.
+  - Hold sprint to fly twice as fast. Sprinting in the air costs no stamina.
+  - The bat squeaks and flaps its wings now and then, and a magic puff with a screech marks each transformation. Other players see and hear it too.
   - Items, interaction, building, attacks, parry and dodge are blocked.
   - Secondary attack bites for 20 damage and restores 5 blood per tick.
   - The form ends when you die, teleport, enter water, are staggered, are cured or run out of blood.
@@ -134,7 +157,7 @@ Rebind the abilities in **Settings → Controls** (rows named "Vampire: …"). G
 
 ### Death and cure
 
-Death keeps your vampire status and blood. If your skill drops on death, your blood is capped to the new capacity. There is no in-game cure yet, only the `vampirizm cure` debug command.
+Death keeps your vampire status but halves your stored blood (see `Blood kept on death`). If your skill drops on death, your blood is also capped to the new capacity. There is no in-game cure yet, only the `vampirizm cure` debug command.
 
 ## Commands
 
@@ -186,12 +209,28 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Stamina per blood | `0.5` | server | Max stamina per unit of stored blood. |
 | Health regen per blood | `0.04` | server | HP restored every 10 s per unit of stored blood. |
 | Drain per minute | `3` | server | Blood lost per minute of play while alive. Scaled by the world food-rate modifier. Not lost while offline. |
+| Blood kept on death | `0.5` | server | Fraction of stored blood kept when you die. `0.5` halves it, `1` keeps all of it. |
+
+### `[Eitr]`
+
+| Setting | Default | Scope | Description |
+|---|---|---|---|
+| Unlock level | `50` | server | Skill level that grants the eitr bar. Below it, a vampire has no eitr. |
+| Base eitr | `50` | server | Max eitr at the unlock level. |
+| Eitr per level | `5` | server | Extra max eitr per skill level above the unlock level. |
+| Base regen | `1` | server | Eitr per second at the unlock level. Replaces the vanilla rate; armor and status effect bonuses still apply. |
+| Regen bonus | `1` | server | Extra eitr per second for each regen step. |
+| Levels per regen bonus | `5` | server | Skill levels above the unlock level per regen step. |
 
 ### `[Feeding]`
 
 | Setting | Default | Scope | Description |
 |---|---|---|---|
 | Blood items | see [table](#living-on-blood) | server | `PrefabId:blood` pairs that vampires can drink from the inventory or hotbar. |
+| Allow meads | `true` | server | Vampires can drink meads and other consumables that only apply a status effect. Food is always refused. |
+| Food burn multiplier | `2` | server | How many times faster food bar entries run out for a vampire. |
+| Blood item food time | `1200` | server | Food timer in seconds a drunk blood item puts in the food list, before the burn multiplier. Adds no stats. |
+| Experience per blood | `2` | server | Skill XP per unit of item blood that enters the bar. |
 
 ### `[Weaknesses]`
 
@@ -201,28 +240,40 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Sun damage fraction | `0.02` | server | Extra damage per tick as a fraction of max HP. |
 | Sun interval | `2` | server | Seconds between sun ticks. |
 | Sun warning | `3` | server | Seconds between the warning and the first tick. |
+| Sun twilight | `120` | server | Real seconds after sunrise and before sunset when the sun does not burn. |
+| Rain sun multiplier | `0.5` | server | Sun damage multiplier in wet weather. `0` disables burning. |
+| Thunderstorm sun multiplier | `0` | server | Sun damage multiplier in a thunderstorm; replaces the rain multiplier. |
+| Swamp sun multiplier | `0` | server | Sun damage multiplier in the Swamp. Multiplied with the weather multiplier. |
+| Mistlands sun multiplier | `0` | server | Sun damage multiplier in the Mistlands. |
+| Ashlands sun multiplier | `2` | server | Sun damage multiplier in the Ashlands. |
 | Slime item | `Ooze` | server | Prefab ID of the sun-protection item. |
 | Slime duration | `300` | server | Seconds of protection per application. |
 | Slime emote | *(empty)* | server | Vanilla emote to play when applying it, e.g. `flex`. Empty uses the eat animation. |
 | Silver items | `SwordSilver, MaceSilver, KnifeSilver, ArrowSilver` | server | Silver weapons and ammo. You could add e.g. `SpearWolfFang`, `FistFenrirClaw` or `BowDraugrFang`. |
 | Silver and spirit multiplier | `2` | server | Damage multiplier for silver or spirit hits. It is applied only once. |
 | Spirit rule | `WholeHit` | server | `WholeHit`: any spirit damage multiplies the whole hit. `SpiritOnly`: without silver, only the spirit part is multiplied. |
+| Silver contact items | `Silver, SilverOre, SilverNecklace, SwordSilver, MaceSilver, KnifeSilver, ArrowSilver, ShieldSilver` | server | Items that burn you while carried anywhere in the inventory. |
+| Silver contact damage | `5` | server | Damage per tick for each inventory stack of silver. `0` disables it. |
+| Silver contact interval | `1` | server | Seconds between silver contact ticks. |
 
 ### `[Bite]`
 
 | Setting | Default | Scope | Description |
 |---|---|---|---|
-| Donors | `Boar, Deer, Deer_White, Neck, Hare, Hen, Chicken, Goblin, GoblinArcher, GoblinShaman, GoblinBrute` | server | Creatures you can drink from. Any creature not listed is forbidden. Bosses and tamed creatures never count. |
-| Never donors | greydwarves, skeletons, draugr, ghosts, wraiths, blobs, surtlings, golems, seekers, ticks, deathsquitos | server | Always forbidden, even if also listed in Donors. |
-| No hold donors | `GoblinBrute` | server | Donors that give blood but are not held in place. |
+| Donors | `Boar, Deer, Deer_White, Neck, Hare, Hen, Chicken, Wolf, Wolf_cub, Bjorn, Lox, Lox_Calf, Goblin, GoblinArcher, GoblinShaman, GoblinBrute` | server | Creatures you can drink from. Any creature not listed is forbidden. Bosses and tamed creatures never count. |
+| Never donors | greydwarves, skeletons, draugr, unbjorns, ghosts, wraiths, blobs, surtlings, golems, seekers, ticks, deathsquitos | server | Always forbidden, even if also listed in Donors. |
+| No hold donors | `Bjorn, Lox, GoblinBrute` | server | Donors that give blood but are not held in place. |
 | Range | `2.5` | server | Maximum bite distance in meters. |
-| Tick interval | `1` | server | Seconds between drain ticks. |
+| Tick interval | `1` | server | Seconds between drain ticks. Damage lands at the end of each interval, never at the start of the bite. |
 | Damage per tick | `6` | server | Damage dealt to the victim per tick. Armor does not reduce it. |
 | Blood per damage | `1.5` | server | Blood gained per point of damage dealt. |
-| Experience per blood | `0.2` | server | Skill XP per unit of blood that enters the bar. |
-| Max duration | `8` | server | Maximum length of one bite, in seconds. |
+| Experience per blood | `4` | server | Skill XP per unit of bitten blood that enters the bar. |
+| Max duration | `2` | server | Length of one bite, in seconds. |
 | Cooldown | `4` | server | Seconds before the next bite. |
-| Emote | *(empty)* | server | Vanilla emote looped while drinking, e.g. `kneel`. Empty uses a short interact animation. |
+| Emote | `cry` | server | Vanilla emote played while drinking, e.g. `cry`, `kneel`. Empty uses a short interact animation. Not used in bat form. |
+| Emote speed | `0` | server | Playback speed of the drinking emote. `0` stretches the whole emote over the bite length. |
+| Sound | `sfx_leech_attack` | server | Vanilla sound prefab played when drinking starts and every tick interval. Empty disables it. |
+| Blood effect | `vfx_player_hit` | server | Vanilla effect prefab spawned as small blood splats while drinking. Empty disables it. |
 | Bite converts players | `true` | server | Whether biting a willing player turns them into a vampire. |
 | Accept conversion by bite | `true` | **local** | Your consent to being turned by a bite. |
 
@@ -232,31 +283,47 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 |---|---|---|---|
 | Blocked weather | `Rain, Storm, Snow, Mist, Fog, Ash` | server | Keywords (case-insensitive). If the current environment's name contains one, the rune won't work. Wet weather always blocks it. |
 | Requires open sky | `true` | server | Whether the ritual fails under a roof or in a dungeon. |
+| Start effects | `fx_GP_Activation` | server | Comma-separated vanilla effect prefabs played when the ritual starts. Empty disables them. |
+| Strike effects | `fx_Lightning_red, sfx_thunder` | server | Comma-separated vanilla effect prefabs played at the ritual's climax. Empty disables them. |
 
 ### `[Abilities]`
 
 | Setting | Default | Scope | Description |
 |---|---|---|---|
+| Unarmed damage multiplier | `5` | server | Bare-handed damage multiplier at skill 100. Scales linearly from ×1 at skill 0. |
 | Dash level | `10` | server | Skill level that unlocks the dash. |
 | Dash blood cost | `5` | server | Blood spent per dash. |
 | Dash cooldown | `2` | server | Seconds between dashes. |
-| Dash distance | `8` | server | Maximum dash length in meters. |
-| Dash speed | `30` | server | Dash speed in m/s. A full 8 m dash takes about 0.27 s. |
+| Dash distance | `10` | server | Maximum dash length in meters. |
+| Dash speed | `40` | server | Dash speed in m/s. A full 10 m dash takes about 0.25 s. |
 | Invisibility level | `25` | server | Skill level that unlocks invisibility. |
 | Invisibility blood drain per minute | `3` | server | Blood spent per minute while invisible. |
+| Invisibility effect | `vfx_odin_despawn` | server | Vanilla effect prefab puffed when you fade or reappear. Empty disables it. |
+| Invisibility sound | `sfx_ghost_death` | server | Vanilla sound prefab played when you fade or reappear. Empty disables it. |
 | Bat form level | `50` | server | Skill level that unlocks bat form. |
 | Bat flight speed | `8` | server | Flight speed in m/s. |
+| Bat sprint speed multiplier | `2` | server | Flight speed multiplier while sprint is held. |
 | Bat form blood drain per minute | `5` | server | Extra blood lost per minute as a bat. |
+| Bat transform sounds | `sfx_raven_poof, sfx_bat_alerted` | server | Comma-separated vanilla sound prefabs, all played when you turn into a bat or back. Empty disables them. |
+| Bat noise sounds | `sfx_bat_idle` | server | Comma-separated vanilla sound prefabs; one random pick per squeak. Empty disables them. |
+| Bat noise interval | `6` | server | Average seconds between squeaks (randomized 0.5×–1.5×). |
+| Bat flap sounds | `sfx_raven_flap` | server | Comma-separated vanilla sound prefabs; one random pick per wing flap. Empty disables them. |
+| Bat flap interval | `2.5` | server | Average seconds between wing flaps (randomized 0.5×–1.5×). |
 | Bat bite damage | `20` | server | Damage per bat bite tick. |
 | Blood per bat bite | `5` | server | Blood restored per bat bite tick. |
+
+### `[Creatures]`
+
+| Setting | Default | Scope | Description |
+|---|---|---|---|
+| Friendly to vampires | `Bat` | server | Comma-separated creature prefab IDs that never attack vampires. One-way: vampires can still attack them. |
 
 ### `[HUD]`
 
 | Setting | Default | Scope | Description |
 |---|---|---|---|
-| Offset X | `0` | local | Horizontal offset of the blood bar from the health panel. |
-| Offset Y | `8` | local | Vertical offset of the blood bar above the health panel. |
-| Width | `220` | local | Blood bar width (80–800). |
+| Offset X | `0` | local | Horizontal offset of the blood bar from its spot right of the health bar and forsaken power. |
+| Offset Y | `0` | local | Vertical offset of the blood bar from the bottom of the health bar. |
 
 ### `[Controls]`
 
@@ -300,8 +367,9 @@ dotnet build Vampirizm.sln -c Release -p:DeployVampirizmOnBuild=false
 
 - conversion, blood overflow and consumption, drain
 - blood item and ID list parsing
-- silver/spirit multiplier, sun timer and damage
+- silver/spirit multiplier, sun timer and damage, silver contact timer and per-stack damage
 - donor rules, bite blood cap, tick ordering and session length
+- day sleep window and dusk wake-up time
 - ritual conditions, ability thresholds and block reasons, dash obstacle distance
 - curing, capacity changes, save locale, migration
 - restoring invisibility materials, checked against a Unity API model
@@ -312,18 +380,18 @@ These tests do not replace running the game.
 
 | Folder | Contents |
 |---|---|
-| `Core/` | `VampireController` (per-player state machine), `VampireState`, blood rules |
+| `Core/` | `VampireController` (per-player state machine), `VampireState`, blood, eitr and sleep rules |
 | `Feeding/` | Blood item table, donor registry, drain rules |
 | `Abilities/` | Bite (`DrainAbility`), dash, invisibility (+ visual), bat form, unlock rules |
 | `Effects/` | Sunlight and slime protection |
-| `Combat/` | Silver registry, hit source tracking, damage multiplier rules |
+| `Combat/` | Silver registry, friendly creature registry, hit source tracking, damage multiplier rules |
 | `Conversion/` | Conversion and rune ritual rules |
 | `Items/` | Vampire Rune prefab and recipe |
 | `Networking/` | ZDO state replication, bite/drain RPCs |
 | `Persistence/` | Save format |
 | `Controls/` | Jotunn key bindings and Controls menu rows |
 | `UI/` | Blood HUD bar |
-| `Patches/` | Harmony patches (food, damage, HUD, persistence, abilities, bite, bat form, invisibility) |
+| `Patches/` | Harmony patches (food, eitr, cold, sleep, damage, friendly creatures, HUD, persistence, abilities, bite, bat form, invisibility) |
 | `Configuration/`, `Localization/`, `Skills/`, `Commands/` | Config, EN/RU strings, skill registration, console command |
 | `Assets/` | Rune icon (`vampire_rune.png`, generated by `generate_rune_icon.py`, embedded in the DLL) |
 
@@ -341,10 +409,17 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
   - Remote clients read this snapshot. For example, the silver multiplier detects a vampire target from its ZDO flag.
 - **Bite networking.**
   - The victim's owner coordinates the bite. Every tick, the vampire's client sends the `Vampirizm_Drain` RPC with a session number and tick number.
+  - Tick 1 is sent on the press and only claims the victim (validation and hold, no damage). Damage ticks follow at the end of each interval, the last one exactly at the session end; the bite waits for its reply before finishing.
   - The owner checks the sender, the vampire flag, distance, donor rules, session uniqueness and tick order. It then applies the damage and replies with the blood actually gained.
   - Duplicate and late replies are ignored.
   - The victim's AI is held only while the session is alive. The hold is released on timeout, owner change or death, so a vampire disconnecting doesn't leave the mob frozen.
+  - When the vampire stops drinking, it sends `Vampirizm_DrainRelease` so the victim is let go at once instead of on timeout.
+  - A held victim is lifted by its owner, so its position syncs like any other movement.
+  - The vampire writes its drink target to its ZDO. Every client uses it to spawn the blood splats and sound locally.
   - Biting a player sends a one-off `Vampirizm_Bite` request instead.
+- **Day sleep.**
+  - The local vampire's `EnvMan.CalculateCanSleep` result is extended to daytime, because the tiny `EnvMan.CanSleep` getter may be inlined into `Bed.Interact`.
+  - The server's `Game.UpdateSleeping` is preceded by a check: during the day, if every character ZDO is in bed and has the vampire flag, it sets up vanilla's time skip with the next dusk (0.76 of the day) as target and sends the vanilla `SleepStart`. Otherwise vanilla runs.
 - **Silver and spirit detection.**
   - `HitData` doesn't record the weapon, so the mod remembers the weapon and ammo while the hit is built (`Attack.DoMeleeAttack/DoAreaAttack`, `Projectile.OnHit/DoAOE`, `Aoe.OnHit`).
   - It applies the multiplier in `Character.Damage` on the attacker's machine, on a copy of the `HitData`.
@@ -359,7 +434,9 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
 3. Cure, switch character or world, die, and lower capacity. A regular character must eat and have stats normally.
 4. Server: commands are refused without admin rights or with debug off, and settings sync.
 5. Two clients: ZDO state on a remote player, late join, rejoin.
-6. Blood: meat from the inventory and hotbar, a full bar, mead/food/feasts refused, cooking station with meat in hand, HUD position.
-7. Sun: dawn and dusk (`skiptime`), roof edges, dungeons, rain and swimming with slime. Silver sword/arrow, spirit weapon, silver + spirit, armor vs. sun.
-8. Rune: crafting, and refusals (day, rain, roof, already a vampire). Bite: allowed and banned donors, last HP, releasing the button, target moving away, stagger. Two clients: bite a mob owned by the other client, two vampires on one target, logging out mid-bite, biting a player with and without consent.
-9. Bat form and invisibility: toggling, flight and collisions, bat bite, drain, blocked actions, exit conditions, and what a remote or late-joining player sees.
+6. Blood: meat from the inventory and hotbar, a full bar, blood items in the food bar with 2× burn, food refused (red tooltip, not used up), meads drunk, cooking station with meat in hand, HUD position.
+7. Sleep: bed at morning, noon and afternoon as a vampire (skips to dusk, "Good evening", Rested), at night (skips to morning), within 30 s of waking (refused), as a regular player during the day (refused). Two clients: two vampires in bed by day, and a vampire plus a regular player in the afternoon (skips to morning).
+8. Sun: dawn and dusk (`skiptime`), roof edges, dungeons, rain and swimming with slime. Silver sword/arrow, spirit weapon, silver + spirit, armor vs. sun. Carrying silver: ingots, ore, sword and necklace stacks.
+9. Rune: crafting, and refusals (day, rain, roof, already a vampire). Bite: allowed and banned donors, last HP, full 2 s session on a single press, target moving away, stagger. Two clients: bite a mob owned by the other client, two vampires on one target, logging out mid-bite, biting a player with and without consent.
+10. Bat form and invisibility: toggling, flight and collisions, bat bite, drain, blocked actions, exit conditions, and what a remote or late-joining player sees.
+11. Friendly bats: frost cave bats ignore a vampire and drop aggro after conversion; hitting one doesn't make it attack back; a regular player in the same cave is still attacked.
