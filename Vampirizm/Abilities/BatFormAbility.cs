@@ -25,6 +25,7 @@ namespace Vampirizm.Abilities
         private bool _inputAllowed = true;
         private Vector3 _move;
         private float _drainTimer;
+        private float _readyAt;
         private float _nextNoise;
         private float _nextFlap;
         // Remote players: last bat state seen, so a peer already flying on arrival does not play the transformation.
@@ -38,6 +39,7 @@ namespace Vampirizm.Abilities
         }
 
         internal bool Active => _active;
+        internal bool OnCooldown => Time.time < _readyAt;
 
         internal void Toggle()
         {
@@ -49,12 +51,15 @@ namespace Vampirizm.Abilities
 
             var settings = Plugin.Instance.Settings;
             AbilityBlock block = AbilityRules.Check(_controller.IsActiveVampire, _controller.Level,
-                settings.BatFormLevel.Value, IsBusy(), Time.time, 0f, _controller.State.Blood, 0f);
+                settings.BatFormLevel.Value, IsBusy(), Time.time, _readyAt, _controller.State.Blood, settings.BatFormCost.Value);
+            if (block == AbilityBlock.None && !_controller.SpendBlood(settings.BatFormCost.Value))
+                block = AbilityBlock.NoBlood;
             if (block != AbilityBlock.None)
             {
                 string message = block == AbilityBlock.Locked
                     ? global::Localization.instance.Localize("$vampirizm_ability_locked",
                         global::Localization.instance.Localize("$vampirizm_action_batform"), Mathf.CeilToInt(settings.BatFormLevel.Value).ToString())
+                    : block == AbilityBlock.Cooldown ? "$vampirizm_batform_cooldown"
                     : block == AbilityBlock.NoBlood ? "$vampirizm_ability_no_blood" : "$vampirizm_bat_busy";
                 _player.Message(MessageHud.MessageType.TopLeft, message);
                 return;
@@ -161,6 +166,8 @@ namespace Vampirizm.Abilities
                 return;
             }
             _active = false;
+            if (Plugin.Instance != null)
+                _readyAt = Time.time + Plugin.Instance.Settings.BatFormCooldown.Value;
             _move = Vector3.zero;
             _rise = _descend = _sprint = false;
             _drainTimer = 0f;

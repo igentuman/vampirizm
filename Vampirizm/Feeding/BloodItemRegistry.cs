@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BepInEx.Configuration;
+using Vampirizm.Items;
 
 namespace Vampirizm.Feeding
 {
@@ -32,12 +33,23 @@ namespace Vampirizm.Feeding
         {
             blood = 0f;
             string id = PrefabId(item);
+            // Built-in food works with existing server configs and always restores its advertised amount.
+            if (id == BloodyStew.PrefabName)
+            {
+                blood = BloodyStew.Blood;
+                return true;
+            }
+            if (VampireFoods.IsFoodId(id))
+            {
+                blood = VampireFoods.BloodFor(id);
+                return true;
+            }
             return id != null && _table.TryGetValue(id, out blood);
         }
 
         internal static bool IsBloodItem(ItemDrop.ItemData item) => TryGetBlood(item, out _);
 
-        internal static bool IsBloodId(string id) => id != null && _table.ContainsKey(id);
+        internal static bool IsBloodId(string id) => id != null && (id == BloodyStew.PrefabName || VampireFoods.IsFoodId(id) || _table.ContainsKey(id));
 
         // Every vanilla food, and meads unless allowed: a mead applies a status effect and feeds nothing.
         // Consumable ammo such as fishing bait has neither and stays usable.

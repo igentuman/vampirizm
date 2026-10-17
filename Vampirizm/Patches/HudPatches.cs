@@ -10,6 +10,7 @@ namespace Vampirizm.Patches
         private static void AfterHudAwake(Hud __instance)
         {
             if (__instance.GetComponent<BloodHud>() == null) __instance.gameObject.AddComponent<BloodHud>();
+            if (__instance.GetComponent<AbilityHud>() == null) __instance.gameObject.AddComponent<AbilityHud>();
         }
     }
 }

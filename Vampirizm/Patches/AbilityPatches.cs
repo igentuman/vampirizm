@@ -40,7 +40,7 @@ namespace Vampirizm.Patches
             attack = attackHold = false;
             secondaryAttack = secondaryAttackHold = false;
             block = blockHold = false;
-            jump = autoRun = dodge = false;
+            jump = crouch = run = autoRun = dodge = false;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Character), "UpdateWalking")]

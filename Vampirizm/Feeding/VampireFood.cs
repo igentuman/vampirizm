@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using Vampirizm.Items;
 
 namespace Vampirizm.Feeding
 {
@@ -63,7 +64,7 @@ namespace Vampirizm.Feeding
 
         private static ItemDrop.ItemData Entry(string id, ItemDrop.ItemData source)
         {
-            float burnTime = BurnTime;
+            float burnTime = id == BloodyStew.PrefabName ? BloodyStew.Duration : VampireFoods.IsFoodId(id) ? 20f * 60f : BurnTime;
             if (Entries.TryGetValue(id, out ItemDrop.ItemData cached) && cached.m_shared.m_foodBurnTime == burnTime) return cached;
             ItemDrop.ItemData entry = source.Clone();
             var shared = (ItemDrop.ItemData.SharedData)CloneShared.Invoke(source.m_shared, null);

@@ -22,7 +22,7 @@ namespace Vampirizm
     {
         public const string PluginGuid = "com.igentuman.vampirizm";
         public const string PluginName = "Vampirizm";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.2.0";
         internal static Plugin Instance { get; private set; }
         internal VampireConfig Settings { get; private set; }
         private Harmony _harmony;
@@ -38,6 +38,10 @@ namespace Vampirizm
             VampireLocalization.Register();
             VampirismSkill.Register();
             VampireRune.Register();
+            BloodyStew.Register();
+            VampireFoods.Register();
+            VampireOrb.Register();
+            Abilities.Orb.SwarmBatPrefab.Register();
             VampireCommand.Register();
             VampireInput.Register(Config);
             _harmony = new Harmony(PluginGuid);

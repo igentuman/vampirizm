@@ -15,6 +15,7 @@ namespace Vampirizm.Abilities
         private readonly InvisibilityVisual _visual;
         private float _drainTimer;
         private float _syncTimer;
+        private float _readyAt;
         private bool _active;
         private bool _remoteSynced;
 
@@ -26,6 +27,7 @@ namespace Vampirizm.Abilities
         }
 
         internal bool Active => _active;
+        internal bool OnCooldown => Time.time < _readyAt;
 
         internal void BeforeEquipmentUpdate() => _visual.BeforeEquipmentUpdate();
 
@@ -45,7 +47,10 @@ namespace Vampirizm.Abilities
             }
 
             AbilityBlock block = AbilityRules.Check(_controller.IsActiveVampire, _controller.Level,
-                settings.InvisibilityLevel.Value, IsBusy(), Time.time, 0f, _controller.State.Blood, 0f);
+                settings.InvisibilityLevel.Value, !_controller.CanChange || IsBusy(), Time.time, _readyAt,
+                _controller.State.Blood, settings.InvisibilityCost.Value);
+            if (block == AbilityBlock.None && !_controller.SpendBlood(settings.InvisibilityCost.Value))
+                block = AbilityBlock.NoBlood;
             if (block != AbilityBlock.None)
             {
                 _player.Message(MessageHud.MessageType.TopLeft, Message(block, settings.InvisibilityLevel.Value));
@@ -103,6 +108,9 @@ namespace Vampirizm.Abilities
         {
             bool wasActive = _active;
             _active = false;
+            // Forced exits (damage, attacking, depleted blood) also prevent immediate reactivation.
+            if (wasActive && _player == Player.m_localPlayer && Plugin.Instance != null)
+                _readyAt = Time.time + Plugin.Instance.Settings.InvisibilityCooldown.Value;
             _drainTimer = 0f;
             _visual.SetActive(false);
             if (_player == null) return;
@@ -126,6 +134,8 @@ namespace Vampirizm.Abilities
 
         private static string Message(AbilityBlock block, float level)
         {
+            if (block == AbilityBlock.Cooldown) return "$vampirizm_invisibility_cooldown";
+            if (block == AbilityBlock.NoBlood) return "$vampirizm_ability_no_blood";
             if (block == AbilityBlock.Locked)
                 return global::Localization.instance.Localize("$vampirizm_ability_locked",
                     global::Localization.instance.Localize("$vampirizm_action_invisibility"), Mathf.CeilToInt(level).ToString());

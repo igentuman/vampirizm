@@ -27,6 +27,7 @@ New to the mod? Read the simple **[Player Guide](PLAYER_GUIDE.md)**.
   - **Dash** (level 10): a short, fast burst of movement.
   - **Invisibility** (level 25): mobs and bosses ignore you and other players can't see you.
   - **Bat form** (level 50): fly as a bat and bite from the air.
+- **Orb of Vampire.** A craftable one-handed orb that summons blood bats: a swarm that bites the creature you aim at and brings back blood, or a circle of bats that guards you and takes creature hits. Costs eitr, uses Blood magic.
 - **Bats are friendly.** Cave bats never attack vampires, even when hit. Vampires can still kill them.
 - **Rebindable controls** on Valheim's Controls tab, plus optional gamepad buttons.
 - **English and Russian** localization.
@@ -80,9 +81,23 @@ After you turn, your food is cleared and you start with 25% of your blood capaci
 | Chicken meat | 10 | Volture meat | 22 |
 | Hare meat | 12 | Bloodbag | 25 |
 | Wolf meat | 15 | Giant blood sack | 35 |
-| Bjorn meat | 18 | | |
+| Bjorn meat | 18 | Bloody stew | 35 |
 
-Cooked dishes, fish and blood pudding give no blood.
+**Bloody stew** is crafted at the food preparation table (`piece_preptable`). One recipe requires **Deer meat ×1 + Raw meat (boar/pork) ×1 + Bjorn meat ×1 + Bloodbag ×1** and produces one stew (`VampirizmBloodyStew`). Only vampires can consume it. It restores **35 blood** immediately and occupies a food slot for **25 minutes** at the normal world food rate. The vampire food burn multiplier and generic blood-item duration do not shorten its timer. Like other food, it can be eaten again after half its duration; a full blood bar does not consume it. Its blood value is fixed and works with existing server configs.
+
+Other cooked dishes, fish and vanilla blood pudding give no blood. The mod adds five more vampire-only foods. Each occupies a 20-minute food slot unaffected by the vampire food burn multiplier, and raises the listed skills by **+15** while its food slot lasts (shown in the skills dialog; bonuses from different foods stack). Seeker blood jelly and serpent blood aspic also add max eitr and **+20%** eitr regen each (stacking to +40%). Below the eitr unlock level this food eitr refills at the base regen rate:
+
+| Food | Station | Blood | Skill bonus | Eitr | Recipe |
+|---|---|---:|---|---|---|
+| Crimson jerky | Food preparation table | 20 | Run | — | Deer meat ×2 + Bloodbag ×1 |
+| Hunter's tartare | Food preparation table | 30 | Swords, Knives, Spears, Bows | — | Wolf meat ×1 + Bloodbag ×1 + Onion ×1 |
+| Black blood pudding | Cauldron | 35 | Blocking (parry) | — | Bloodbag ×1 + Barley flour ×2 + Cloudberry ×2 |
+| Seeker blood jelly | Cauldron | 45 | Blood magic, Jump | +20, regen +20% | Giant blood sack ×1 + Raw seeker meat ×2 + Royal jelly ×2 |
+| Serpent blood aspic | Cauldron | 40 | Swim | +25, regen +20% | Serpent meat ×2 + Bloodbag ×1 |
+
+Each vampire food has its own world model: a matching vanilla dish with a custom blood-themed texture (generated from the vanilla texture by `Assets/generate_food_textures.py` and embedded in the DLL), so drops are recognizable on the ground.
+
+**Placing food in the world.** Bloody stew and the five vampire foods can be placed like vanilla feasts: equip the vanilla **Serving Tray** and pick the dish from its **Food** tab (it consumes one item from the inventory). A placed dish is eaten in the world with **Use** — only a vampire can eat it, and it grants the same blood as drinking it from the inventory. Removing it with the Serving Tray returns the item.
 
 ### Biting
 
@@ -133,11 +148,14 @@ Abilities unlock as your Vampirism skill grows. They work only when you are a va
 | Ability | Default key | Unlocks at | Cost |
 |---|---|---|---|
 | Dash | `Left Alt` | level 10 | 5 blood, 2 s cooldown |
-| Invisibility | `H` (toggle) | level 25 | 3 blood/min while active |
-| Bat form | `B` (toggle) | level 50 | 5 extra blood/min while active |
+| Invisibility | `H` (toggle) | level 25 | 5 blood to activate, 15 blood/min while active, 2 s cooldown after exiting |
+| Bat form | `B` (toggle) | level 50 | 5 blood to activate, 20 extra blood/min while active, 2 s cooldown after exiting |
+
+Unlocked abilities appear as icons in the bottom-left corner of the HUD. Icons turn gray during cooldown and regain their color when ready. Activation requires enough blood to pay the full cost; a blocked attempt spends nothing. Invisibility and bat form can always be turned off immediately, and their cooldown also applies after a forced exit.
 
 - **Dash.**
-  - You dash up to 10 m in the direction you are moving, or forward if you aren't moving.
+  - You dash up to 10 m in the direction you are moving, or forward if you aren't moving. The default speed is 80 m/s (about 0.125 s for 10 m).
+  - The dash follows terrain height, uses the jump animation and leaves a faint, short-lived red trail. It stops at unsupported ledges.
   - It stops just before walls, steep slopes and creatures. If there is no room, it doesn't start and costs nothing.
   - You can't dash in the air, in water, while biting, attacking, dodging, sitting, overweight or in build mode.
   - There is no invulnerability during a dash.
@@ -154,6 +172,23 @@ Abilities unlock as your Vampirism skill grows. They work only when you are a va
   - The form ends when you die, teleport, enter water, are staggered, are cured or run out of blood.
 
 Rebind the abilities in **Settings → Controls** (rows named "Vampire: …"). Gamepad buttons can be set only in the config file (see [Controls](#controls)).
+
+### Orb of Vampire
+
+Crafted at a **Galdr table** (level 2) from 10 Ruby, 5 Eitr and 1 Surtling core. Upgrades add 5 Ruby and 5 Eitr per level, up to quality 3. The required table level is capped at what the Galdr table can reach, so the top quality stays craftable. Repaired at the Galdr table.
+
+Hold it in the right hand (the left hand stays free for a shield or torch). Only vampires can cast; every cast plays the use animation, costs **55 eitr** reduced by Blood magic like vanilla staffs (−33% at level 100), uses 1 durability and raises **Blood magic**. Bat bites raise Blood magic too.
+
+| Quality | Bats (swarm and shield) | Shield time | Durability |
+|---|---|---|---|
+| 1 | 7 | 200 s | 200 |
+| 2 | 9 | 225 s | 250 |
+| 3 | 11 | 250 s | 300 |
+
+- **Primary attack: swarm.** Bats burst out of the orb toward the creature closest to your aim (30° cone, 30 m, line of sight). They circle it and dive one by one every 3 s, each bite dealing 7 pierce. Hits come from the bats, so the victim fights back against them. If the target dies, the swarm switches to the nearest enemy within 10 m. After 15 s the bats return to you with **3 blood each** if the last target was a donor creature, otherwise they fly away. With nothing in the cone the bats scatter. Only one swarm at a time.
+- **Secondary attack: shield.** Bats circle you and dive at fighting monsters within 8 m. The nearest bat takes each creature hit for you; one bat can take at most one hit per 0.5 s. Casting again refreshes the time and tops the circle up. You can't raise a shield while a swarm is out.
+- **Shield into swarm.** A primary cast while the shield is up sends the shield bats at the target instead of summoning new ones; the shield ends.
+- Bats are real creatures with 15 health: monsters target and kill them. They are never saved with the world, and they fly away when you die, teleport or are cured. Tamed creatures, friendly-listed creatures and other players (unless both have PvP on) are never targeted.
 
 ### Death and cure
 
@@ -228,8 +263,8 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 |---|---|---|---|
 | Blood items | see [table](#living-on-blood) | server | `PrefabId:blood` pairs that vampires can drink from the inventory or hotbar. |
 | Allow meads | `true` | server | Vampires can drink meads and other consumables that only apply a status effect. Food is always refused. |
-| Food burn multiplier | `2` | server | How many times faster food bar entries run out for a vampire. |
-| Blood item food time | `1200` | server | Food timer in seconds a drunk blood item puts in the food list, before the burn multiplier. Adds no stats. |
+| Food burn multiplier | `2` | server | How many times faster food bar entries run out for a vampire. Bloody stew is exempt. |
+| Blood item food time | `1200` | server | Food timer in seconds a drunk blood item puts in the food list, before the burn multiplier. Adds no stats. Bloody stew has its own 1500-second timer. |
 | Experience per blood | `2` | server | Skill XP per unit of item blood that enters the bar. |
 
 ### `[Weaknesses]`
@@ -295,15 +330,19 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Dash blood cost | `5` | server | Blood spent per dash. |
 | Dash cooldown | `2` | server | Seconds between dashes. |
 | Dash distance | `10` | server | Maximum dash length in meters. |
-| Dash speed | `40` | server | Dash speed in m/s. A full 10 m dash takes about 0.25 s. |
+| Dash speed | `40` | server | Base speed in m/s, applied at 2× speed: `40` gives 80 m/s. A full 10 m dash takes about 0.125 s. |
 | Invisibility level | `25` | server | Skill level that unlocks invisibility. |
-| Invisibility blood drain per minute | `3` | server | Blood spent per minute while invisible. |
+| Invisibility blood cost | `5` | server | Blood spent when activating invisibility. |
+| Invisibility cooldown | `2` | server | Seconds after invisibility ends before it can be activated again. |
+| Invisibility blood drain per minute | `15` | server | Blood spent per minute while invisible. |
 | Invisibility effect | `vfx_odin_despawn` | server | Vanilla effect prefab puffed when you fade or reappear. Empty disables it. |
 | Invisibility sound | `sfx_ghost_death` | server | Vanilla sound prefab played when you fade or reappear. Empty disables it. |
 | Bat form level | `50` | server | Skill level that unlocks bat form. |
+| Bat form blood cost | `5` | server | Blood spent when entering bat form. |
+| Bat form cooldown | `2` | server | Seconds after bat form ends before it can be activated again. |
 | Bat flight speed | `8` | server | Flight speed in m/s. |
 | Bat sprint speed multiplier | `2` | server | Flight speed multiplier while sprint is held. |
-| Bat form blood drain per minute | `5` | server | Extra blood lost per minute as a bat. |
+| Bat form blood drain per minute | `20` | server | Extra blood lost per minute as a bat. |
 | Bat transform sounds | `sfx_raven_poof, sfx_bat_alerted` | server | Comma-separated vanilla sound prefabs, all played when you turn into a bat or back. Empty disables them. |
 | Bat noise sounds | `sfx_bat_idle` | server | Comma-separated vanilla sound prefabs; one random pick per squeak. Empty disables them. |
 | Bat noise interval | `6` | server | Average seconds between squeaks (randomized 0.5×–1.5×). |
@@ -311,6 +350,29 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Bat flap interval | `2.5` | server | Average seconds between wing flaps (randomized 0.5×–1.5×). |
 | Bat bite damage | `20` | server | Damage per bat bite tick. |
 | Blood per bat bite | `5` | server | Blood restored per bat bite tick. |
+
+### `[Orb]`
+
+| Setting | Default | Scope | Description |
+|---|---|---|---|
+| Base eitr | `55` | server | Eitr per cast before the Blood magic reduction. |
+| Skill eitr reduction | `0.33` | server | Fraction of the cost removed at Blood magic 100. |
+| Base bats | `7` | server | Bats of a base quality orb, for swarm and shield. |
+| Bats per level | `2` | server | Extra bats per upgrade. |
+| Bat damage | `7` | server | Pierce damage per bite. |
+| Bite interval | `3` | server | Seconds between dives of one bat. |
+| Swarm duration | `15` | server | Seconds before the swarm returns or leaves. |
+| Shield duration | `200` | server | Seconds a base quality shield lasts. |
+| Shield duration per level | `25` | server | Extra shield seconds per upgrade. |
+| Bat health | `15` | server | Health of one bat. |
+| Cone angle | `30` | server | Full aiming cone in degrees. |
+| Range | `30` | server | Maximum target distance in meters. |
+| Blood per bat | `3` | server | Blood each surviving bat brings back from a donor. |
+| Shield absorb | `1` | server | Fraction of a creature hit taken by a shield bat instead of you. |
+| Cast delay | `0.35` | server | Seconds from the cast animation start until bats leave the orb. |
+| Skill per cast | `1` | server | Blood magic experience per cast. |
+| Skill per bite | `0.25` | server | Blood magic experience per bat bite. |
+| Target bosses | `true` | server | The swarm may be cast at bosses. |
 
 ### `[Creatures]`
 
@@ -386,14 +448,14 @@ These tests do not replace running the game.
 | `Effects/` | Sunlight and slime protection |
 | `Combat/` | Silver registry, friendly creature registry, hit source tracking, damage multiplier rules |
 | `Conversion/` | Conversion and rune ritual rules |
-| `Items/` | Vampire Rune prefab and recipe |
+| `Items/` | Vampire Rune and Bloody stew prefabs and recipes |
 | `Networking/` | ZDO state replication, bite/drain RPCs |
 | `Persistence/` | Save format |
 | `Controls/` | Jotunn key bindings and Controls menu rows |
 | `UI/` | Blood HUD bar |
 | `Patches/` | Harmony patches (food, eitr, cold, sleep, damage, friendly creatures, HUD, persistence, abilities, bite, bat form, invisibility) |
 | `Configuration/`, `Localization/`, `Skills/`, `Commands/` | Config, EN/RU strings, skill registration, console command |
-| `Assets/` | Rune icon (`vampire_rune.png`, generated by `generate_rune_icon.py`, embedded in the DLL) |
+| `Assets/` | Rune and Bloody stew icons, embedded in the DLL; stew generation prompt |
 
 The plugin installs each Harmony patch class on its own. If one patch fails because a game method signature changed, the error is logged and the other systems still load.
 
@@ -429,7 +491,7 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
 
 ### In-game test checklist
 
-1. Client loads Jotunn 2.29.2 and Vampirizm 0.1.0 (check the log). Dedicated server: not tested yet.
+1. Client loads Jotunn 2.29.2 and Vampirizm 0.2.0 (check the log). Dedicated server: not tested yet.
 2. Convert, add blood and set the level. Then save, restart, and compare `status` and the skills menu.
 3. Cure, switch character or world, die, and lower capacity. A regular character must eat and have stats normally.
 4. Server: commands are refused without admin rights or with debug off, and settings sync.
@@ -438,5 +500,8 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
 7. Sleep: bed at morning, noon and afternoon as a vampire (skips to dusk, "Good evening", Rested), at night (skips to morning), within 30 s of waking (refused), as a regular player during the day (refused). Two clients: two vampires in bed by day, and a vampire plus a regular player in the afternoon (skips to morning).
 8. Sun: dawn and dusk (`skiptime`), roof edges, dungeons, rain and swimming with slime. Silver sword/arrow, spirit weapon, silver + spirit, armor vs. sun. Carrying silver: ingots, ore, sword and necklace stacks.
 9. Rune: crafting, and refusals (day, rain, roof, already a vampire). Bite: allowed and banned donors, last HP, full 2 s session on a single press, target moving away, stagger. Two clients: bite a mob owned by the other client, two vampires on one target, logging out mid-bite, biting a player with and without consent.
-10. Bat form and invisibility: toggling, flight and collisions, bat bite, drain, blocked actions, exit conditions, and what a remote or late-joining player sees.
+10. Bat form and invisibility: toggling, flight and collisions, bat bite, drain, blocked actions, exit conditions, and what a remote or late-joining player sees. Check that activation costs 5 blood once, insufficient blood blocks entry without effects or spending, exiting costs nothing, and both manual and forced exits prevent reactivation for 2 seconds. Repeated blocked attempts must not extend cooldown.
+    - HUD: icons appear at their configured unlock levels in the bottom-left corner, pack together without gaps for locked abilities, turn gray during cooldown, and regain color when ready. Check hidden HUD, death, cure, respawn and UI scaling.
 11. Friendly bats: frost cave bats ignore a vampire and drop aggro after conversion; hitting one doesn't make it attack back; a regular player in the same cave is still attacked.
+12. Dash: flat ground, uphill, downhill, hill crests, steps, a ledge, and a wall or creature in the path. Check the 80 m/s default, jump pose without lift, faint red trail and its fade after completion or interruption. Check that existing `Dash speed = 40` configs also get the doubled speed.
+13. Bloody stew: one recipe at `piece_preptable`, requiring all four ingredients. Confirm 35 blood, a 25-minute food entry despite the vampire burn multiplier, no consumption at full blood or before the food refresh threshold, human refusal from inventory/hotbar, and the same remaining timer after saving and rejoining.

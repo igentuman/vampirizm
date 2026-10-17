@@ -25,6 +25,9 @@ namespace Vampirizm.Combat
             if (errors.Count > 0) Plugin.Warn("Friendly creatures: ignored entries: " + string.Join(", ", errors));
         }
 
+        internal static bool IsListed(Character creature)
+            => creature != null && _ids.Count > 0 && _ids.Contains(Utils.GetPrefabName(creature.gameObject));
+
         // One-way: the creature leaves the vampire alone, the vampire may still attack it.
         internal static bool IsFriendlyTo(Character creature, Character target)
             => _ids.Count > 0 && target is Player player && !(creature is Player) &&

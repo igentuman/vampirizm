@@ -1,5 +1,6 @@
 using UnityEngine;
 using Vampirizm.Abilities;
+using Vampirizm.Abilities.Orb;
 using Vampirizm.Controls;
 using Vampirizm.Effects;
 using Vampirizm.Feeding;
@@ -25,6 +26,7 @@ namespace Vampirizm.Core
         internal DashAbility Dash { get; private set; }
         internal InvisibilityAbility Invisibility { get; private set; }
         internal BatFormAbility BatForm { get; private set; }
+        internal OrbCaster Orb { get; private set; }
         internal bool CanChange => _loaded && !_preserveSave && IsLocalOwner && !_player.IsDead();
         // Vampire rules (food ban, blood stats, HUD) apply only to the loaded local character.
         internal bool IsActiveVampire => _loaded && State.IsVampire && IsLocalOwner && Plugin.Instance != null;
@@ -48,10 +50,12 @@ namespace Vampirizm.Core
             Dash = new DashAbility(_player, this);
             Invisibility = new InvisibilityAbility(_player, this);
             BatForm = new BatFormAbility(_player, this);
+            Orb = new OrbCaster(_player, this);
         }
 
         private void OnDisable()
         {
+            Dash?.End();
             Invisibility?.End(false);
         }
 
@@ -61,6 +65,7 @@ namespace Vampirizm.Core
             Dash?.End();
             Invisibility?.End(false);
             BatForm?.End(false);
+            Orb?.End(true);
         }
 
         internal void LoadState()
@@ -95,6 +100,7 @@ namespace Vampirizm.Core
             Dash.Update();
             Invisibility.UpdateLocal(Time.unscaledDeltaTime);
             BatForm.Update(Time.deltaTime);
+            Orb.Update();
             if (IsActiveVampire) ReadActions();
             _refreshTimer -= Time.unscaledDeltaTime;
             if (_refreshTimer > 0f) return;
@@ -145,6 +151,7 @@ namespace Vampirizm.Core
             Dash.End();
             Invisibility.End();
             BatForm.End(false);
+            Orb.End(false);
             SlimeProtection.Remove(_player);
             _sun.Reset();
             _silver.Reset();
@@ -212,7 +219,11 @@ namespace Vampirizm.Core
             var foods = _player.GetFoods();
             float extra = dt * Game.m_foodRate * (burnMultiplier - 1f);
             if (extra <= 0f) return;
-            foreach (Player.Food food in foods) food.m_time -= extra;
+            foreach (Player.Food food in foods)
+            {
+                // Prepared stew keeps its advertised 25-minute timer at the normal world food rate.
+                if (food.m_name != Items.BloodyStew.PrefabName && !Items.VampireFoods.IsFoodId(food.m_name)) food.m_time -= extra;
+            }
         }
 
         // Blood is added on top of the vanilla base and food values.
@@ -223,14 +234,18 @@ namespace Vampirizm.Core
             float capacity = Capacity;
             hp += BloodRules.StatBonus(State.Blood, capacity, settings.HealthPerBlood.Value);
             stamina += BloodRules.StatBonus(State.Blood, capacity, settings.StaminaPerBlood.Value);
-            eitr += settings.MaxEitr(Level);
+            eitr += settings.MaxEitr(Level) + Items.VampireFoods.EitrBonus(_player);
         }
 
         // Runs inside the vanilla stats tick, right before eitr regen; EitrPatches restores the vanilla base afterwards.
         internal void ApplyEitrRegen()
         {
             if (!IsActiveVampire) return;
-            float regen = Plugin.Instance.Settings.EitrRegen(Level);
+            var settings = Plugin.Instance.Settings;
+            float regen = settings.EitrRegen(Level);
+            // Below the unlock level only food grants eitr; it refills at the base rate.
+            if (regen <= 0f && Items.VampireFoods.EitrBonus(_player) > 0f) regen = settings.EitrRegenBase.Value;
+            regen *= 1f + Items.VampireFoods.EitrRegenBonus(_player);
             _player.m_eiterRegen = EitrRules.VanillaRegenBase(regen, _player.GetEitr(), _player.GetMaxEitr());
         }
 

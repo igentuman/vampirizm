@@ -8,7 +8,7 @@ using Vampirizm.Items;
 
 namespace Vampirizm.Patches
 {
-    // Food is replaced only for the local vampire; ordinary characters keep every vanilla path.
+    // Blood feeding is local to the vampire; custom vampire food is also refused for ordinary characters.
     [HarmonyPatch]
     internal static class FoodPatches
     {
@@ -19,11 +19,21 @@ namespace Vampirizm.Patches
             return controller != null && controller.IsActiveVampire ? controller : null;
         }
 
+        private static bool RefuseVampireFood(Player player, ItemDrop.ItemData item)
+        {
+            if (!BloodyStew.IsStew(item) && !VampireFoods.IsFood(item)) return false;
+            var controller = player.GetComponent<VampireController>();
+            if (controller != null && controller.IsActiveVampire) return false;
+            player.Message(MessageHud.MessageType.Center, "$vampirizm_food_vampire_only");
+            return true;
+        }
+
         // Inventory, hotbar and gamepad use all arrive here: the rune for anyone, blood items and slime for vampires.
         [HarmonyPrefix, HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UseItem))]
         private static bool BeforeUseItem(Humanoid __instance, Inventory inventory, ItemDrop.ItemData item, bool fromInventoryGui)
         {
             if (item == null || Plugin.Instance == null || !(__instance is Player player) || player != Player.m_localPlayer) return true;
+            if (RefuseVampireFood(player, item)) return false;
             bool rune = VampireRune.IsRune(item);
             bool blood = !rune && ActiveVampire(player) != null && BloodItemRegistry.IsBloodItem(item);
             bool slime = !rune && !blood && ActiveVampire(player) != null && SlimeProtection.IsSlimeItem(item);
@@ -44,6 +54,11 @@ namespace Vampirizm.Patches
         [HarmonyPrefix, HarmonyPatch(typeof(Player), nameof(Player.CanConsumeItem))]
         private static bool BeforeCanConsumeItem(Player __instance, ItemDrop.ItemData item, ref bool __result)
         {
+            if (RefuseVampireFood(__instance, item))
+            {
+                __result = false;
+                return false;
+            }
             if (item == null || ActiveVampire(__instance) == null) return true;
             // Keep the inventory action enabled so Humanoid.UseItem can route the request to BloodFeeding.
             // The UseItem prefix consumes it here and EatFood reroutes it as a final vanilla guard.
@@ -58,13 +73,59 @@ namespace Vampirizm.Patches
             return false;
         }
 
+        // Direct consumers must also go through blood feeding: this food has no vanilla health stat,
+        // so vanilla ConsumeItem would otherwise remove it without calling EatFood.
+        [HarmonyPrefix, HarmonyPatch(typeof(Player), nameof(Player.ConsumeItem))]
+        private static bool BeforeConsumeItem(Player __instance, Inventory inventory, ItemDrop.ItemData item, ref bool __result)
+        {
+            if (!BloodyStew.IsStew(item) && !VampireFoods.IsFood(item)) return true;
+            __result = false;
+            if (RefuseVampireFood(__instance, item) || ActiveVampire(__instance) == null || Plugin.Instance == null) return false;
+            if (inventory == null) inventory = __instance.GetInventory();
+            if (!inventory.ContainsItem(item)) return false;
+            int stack = item.m_stack;
+            BloodFeeding.TryDrink(__instance, inventory, item);
+            __result = item.m_stack < stack || !inventory.ContainsItem(item);
+            return false;
+        }
+
         // Last guard for callers that skip CanConsumeItem: blood items go to BloodFeeding, ordinary food is refused.
         [HarmonyPrefix, HarmonyPatch(typeof(Player), nameof(Player.EatFood))]
         private static bool BeforeEatFood(Player __instance, ItemDrop.ItemData item, ref bool __result)
         {
+            if (RefuseVampireFood(__instance, item))
+            {
+                __result = false;
+                return false;
+            }
             if (item == null || ActiveVampire(__instance) == null) return true;
             __result = BloodItemRegistry.IsBloodItem(item) && BloodFeeding.TryDrink(__instance, __instance.GetInventory(), item);
             return false;
+        }
+
+        // Vampire food placed in the world: vanilla ItemDrop.Eat removes the piece but grants nothing
+        // (the item has no vanilla food stats), so gate it first and route the gain to blood feeding after.
+        [HarmonyPrefix, HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.Eat))]
+        private static bool BeforeDropEat(ItemDrop __instance, ref bool __result)
+        {
+            ItemDrop.ItemData item = __instance.m_itemData;
+            if (!BloodyStew.IsStew(item) && !VampireFoods.IsFood(item)) return true;
+            Player player = Player.m_localPlayer;
+            // Non-vampires are refused with a message by the CanConsumeItem prefix inside vanilla Eat.
+            if (player == null || ActiveVampire(player) == null) return true;
+            if (BloodFeeding.CanDrinkPlaced(player, item)) return true;
+            __result = false;
+            return false;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.Eat))]
+        private static void AfterDropEat(ItemDrop __instance, bool __result)
+        {
+            if (!__result) return;
+            ItemDrop.ItemData item = __instance.m_itemData;
+            if (!BloodyStew.IsStew(item) && !VampireFoods.IsFood(item)) return;
+            Player player = Player.m_localPlayer;
+            if (player != null) BloodFeeding.DrinkPlaced(player, item);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Player), "GetTotalFoodValue")]
@@ -75,6 +136,14 @@ namespace Vampirizm.Patches
         private static void AfterUpdateFood(Player __instance, float dt, bool forceUpdate)
         {
             if (!forceUpdate) ActiveVampire(__instance)?.TickFood(dt);
+        }
+
+        // Vanilla Skills.GetSkillLevel and GetSkillFactor both pass through here, so the skills dialog shows the bonus too.
+        [HarmonyPostfix, HarmonyPatch(typeof(SEMan), nameof(SEMan.ModifySkillLevel))]
+        private static void AfterModifySkillLevel(Character ___m_character, global::Skills.SkillType skill, ref float level)
+        {
+            if (ActiveVampire(___m_character) != null)
+                level += VampireFoods.SkillLevelBonus((Player)___m_character, skill);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip),

@@ -81,10 +81,14 @@ namespace Vampirizm.Configuration
         internal ConfigEntry<float> DashDistance { get; }
         internal ConfigEntry<float> DashSpeed { get; }
         internal ConfigEntry<float> InvisibilityLevel { get; }
+        internal ConfigEntry<float> InvisibilityCost { get; }
+        internal ConfigEntry<float> InvisibilityCooldown { get; }
         internal ConfigEntry<float> InvisibilityDrainPerMinute { get; }
         internal ConfigEntry<string> InvisibilityEffect { get; }
         internal ConfigEntry<string> InvisibilitySound { get; }
         internal ConfigEntry<float> BatFormLevel { get; }
+        internal ConfigEntry<float> BatFormCost { get; }
+        internal ConfigEntry<float> BatFormCooldown { get; }
         internal ConfigEntry<float> BatFormSpeed { get; }
         internal ConfigEntry<float> BatSprintMultiplier { get; }
         internal ConfigEntry<float> BatFormDrainPerMinute { get; }
@@ -96,6 +100,24 @@ namespace Vampirizm.Configuration
         internal ConfigEntry<float> BatBiteDamage { get; }
         internal ConfigEntry<float> BatBiteBlood { get; }
         internal ConfigEntry<string> FriendlyCreatures { get; }
+        internal ConfigEntry<float> OrbBaseEitr { get; }
+        internal ConfigEntry<float> OrbSkillEitrReduction { get; }
+        internal ConfigEntry<int> OrbBaseBats { get; }
+        internal ConfigEntry<int> OrbBatsPerLevel { get; }
+        internal ConfigEntry<float> OrbBatDamage { get; }
+        internal ConfigEntry<float> OrbBiteInterval { get; }
+        internal ConfigEntry<float> OrbSwarmDuration { get; }
+        internal ConfigEntry<float> OrbShieldDuration { get; }
+        internal ConfigEntry<float> OrbShieldPerLevel { get; }
+        internal ConfigEntry<float> OrbBatHealth { get; }
+        internal ConfigEntry<float> OrbConeAngle { get; }
+        internal ConfigEntry<float> OrbRange { get; }
+        internal ConfigEntry<float> OrbBloodPerBat { get; }
+        internal ConfigEntry<float> OrbShieldAbsorb { get; }
+        internal ConfigEntry<float> OrbCastDelay { get; }
+        internal ConfigEntry<float> OrbSkillPerCast { get; }
+        internal ConfigEntry<float> OrbSkillPerBite { get; }
+        internal ConfigEntry<bool> OrbTargetBosses { get; }
 
         internal VampireConfig(ConfigFile config)
         {
@@ -117,15 +139,15 @@ namespace Vampirizm.Configuration
                 "Fraction of stored blood kept when a vampire dies. 0.5 halves the blood, 1 keeps all of it.");
             BloodItems = AdminString(config, "Feeding", "Blood items", DefaultBloodItems,
                 "Comma-separated PrefabId:blood pairs that a vampire can drink from the inventory or hotbar. " +
-                "One item is consumed per use; blood above capacity is lost.");
+                "One item is consumed per use; blood above capacity is lost. Bloody stew always grants 35 blood independently of this list.");
             AllowMeads = config.Bind("Feeding", "Allow meads", true,
                 new ConfigDescription("Vampires can drink meads and other consumables that only apply a status effect. Food is always refused.",
                     null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             FoodBurnMultiplier = Bind(config, "Feeding", "Food burn multiplier", 2f, 1f, 10f,
-                "How many times faster food bar entries run out for a vampire. 2 halves every duration.");
+                "How many times faster food bar entries run out for a vampire. 2 halves durations except Bloody stew, which keeps its own timer.");
             BloodFoodDuration = Bind(config, "Feeding", "Blood item food time", 1200f, 10f, 7200f,
                 "Food timer in seconds that a drunk blood item puts in the food list, before the burn multiplier. " +
-                "The same item can be drunk again once half of it has burnt, like vanilla food. The entry adds no stats.");
+                "The same item can be drunk again once half of it has burnt, like vanilla food. The entry adds no stats. Bloody stew uses 1500 seconds instead.");
             XpPerItemBlood = Bind(config, "Feeding", "Experience per blood", 2f, 0f, 100f,
                 "Vampirism skill experience per unit of item blood that entered a non-full bar.");
             SunDamage = Weakness(config, "Sun damage", 2f, 0f, 1000f,
@@ -222,8 +244,10 @@ namespace Vampirizm.Configuration
             DashDistance = Bind(config, "Abilities", "Dash distance", 10f, 1f, 20f,
                 "Maximum dash length in meters. The dash stops before walls, steep slopes and creatures on its path.");
             DashSpeed = Bind(config, "Abilities", "Dash speed", 40f, 5f, 80f,
-                "Dash speed in meters per second. At 40 m/s the default 10 m dash takes about 0.25 seconds.");
+                "Base dash speed in meters per second, applied at 2x speed. The default 40 gives 80 m/s and a 10 m dash takes about 0.125 seconds.");
             InvisibilityLevel = Bind(config, "Abilities", "Invisibility level", 25f, 0f, 100f, "Vampirism skill level that unlocks invisibility.");
+            InvisibilityCost = Bind(config, "Abilities", "Invisibility blood cost", 5f, 0f, 1000f, "Blood spent when activating invisibility.");
+            InvisibilityCooldown = Bind(config, "Abilities", "Invisibility cooldown", 2f, 0f, 60f, "Seconds after invisibility ends before it can be activated again.");
             InvisibilityDrainPerMinute = Bind(config, "Abilities", "Invisibility blood drain per minute", 15f, 0f, 1000f,
                 "Blood continuously spent while invisibility is active.");
             InvisibilityEffect = AdminString(config, "Abilities", "Invisibility effect", "vfx_odin_despawn",
@@ -231,6 +255,8 @@ namespace Vampirizm.Configuration
             InvisibilitySound = AdminString(config, "Abilities", "Invisibility sound", "sfx_ghost_death",
                 "Vanilla sound prefab played when the vampire fades or reappears. Empty disables it.");
             BatFormLevel = Bind(config, "Abilities", "Bat form level", 50f, 0f, 100f, "Vampirism skill level that unlocks the bat form.");
+            BatFormCost = Bind(config, "Abilities", "Bat form blood cost", 5f, 0f, 1000f, "Blood spent when entering bat form.");
+            BatFormCooldown = Bind(config, "Abilities", "Bat form cooldown", 2f, 0f, 60f, "Seconds after bat form ends before it can be activated again.");
             BatFormSpeed = Bind(config, "Abilities", "Bat flight speed", 8f, 1f, 30f, "Horizontal and vertical flight speed in meters per second.");
             BatSprintMultiplier = Bind(config, "Abilities", "Bat sprint speed multiplier", 2f, 1f, 5f,
                 "Flight speed multiplier while the sprint key is held.");
@@ -252,6 +278,30 @@ namespace Vampirizm.Configuration
                 "Blood restored for each successful bat bite tick, up to remaining capacity.");
             FriendlyCreatures = AdminString(config, "Creatures", "Friendly to vampires", "Bat",
                 "Comma-separated creature prefab IDs that never attack vampires. Vampires can still attack them.");
+            OrbBaseEitr = Bind(config, "Orb", "Base eitr", 55f, 0f, 1000f,
+                "Eitr per orb cast (swarm and shield) before the Blood magic skill reduction.");
+            OrbSkillEitrReduction = Bind(config, "Orb", "Skill eitr reduction", 0.33f, 0f, 1f,
+                "Fraction of the eitr cost removed at Blood magic 100, like vanilla staffs. Scales linearly with the skill.");
+            OrbBaseBats = BindInt(config, "Orb", "Base bats", 7, 1, 50, "Bats summoned by a base quality orb, for both swarm and shield.");
+            OrbBatsPerLevel = BindInt(config, "Orb", "Bats per level", 2, 0, 20, "Additional bats per orb upgrade.");
+            OrbBatDamage = Bind(config, "Orb", "Bat damage", 7f, 0f, 1000f, "Pierce damage of one bat bite.");
+            OrbBiteInterval = Bind(config, "Orb", "Bite interval", 3f, 0.5f, 60f, "Seconds between dives of one bat.");
+            OrbSwarmDuration = Bind(config, "Orb", "Swarm duration", 15f, 1f, 300f,
+                "Seconds the swarm attacks before it returns with blood or leaves.");
+            OrbShieldDuration = Bind(config, "Orb", "Shield duration", 200f, 1f, 3600f, "Seconds a base quality shield lasts.");
+            OrbShieldPerLevel = Bind(config, "Orb", "Shield duration per level", 25f, 0f, 3600f, "Additional shield seconds per orb upgrade.");
+            OrbBatHealth = Bind(config, "Orb", "Bat health", 15f, 1f, 10000f, "Health of one summoned bat.");
+            OrbConeAngle = Bind(config, "Orb", "Cone angle", 30f, 1f, 180f, "Full aiming cone angle in degrees for the swarm target.");
+            OrbRange = Bind(config, "Orb", "Range", 45f, 2f, 100f, "Maximum swarm target distance in meters.");
+            OrbBloodPerBat = Bind(config, "Orb", "Blood per bat", 3f, 0f, 1000f,
+                "Blood each surviving bat brings back from a donor creature.");
+            OrbShieldAbsorb = Bind(config, "Orb", "Shield absorb", 1f, 0f, 1f,
+                "Fraction of a creature hit taken by the nearest shield bat instead of the player. One bat absorbs at most once per 0.5 seconds.");
+            OrbCastDelay = Bind(config, "Orb", "Cast delay", 0.35f, 0f, 2f, "Seconds from the cast animation start until the bats leave the orb.");
+            OrbSkillPerCast = Bind(config, "Orb", "Skill per cast", 1f, 0f, 100f, "Blood magic experience per orb cast.");
+            OrbSkillPerBite = Bind(config, "Orb", "Skill per bite", 0.25f, 0f, 100f, "Blood magic experience per bat bite.");
+            OrbTargetBosses = config.Bind("Orb", "Target bosses", true,
+                new ConfigDescription("The swarm may be cast at bosses.", null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
         }
 
         internal float Capacity(float level) => BloodRules.Capacity(level, BaseCapacity.Value, CapacityPerLevel.Value);
@@ -271,6 +321,12 @@ namespace Vampirizm.Configuration
         {
             return config.Bind(section, key, value, new ConfigDescription(description,
                 new AcceptableValueRange<float>(min, max), new ConfigurationManagerAttributes { IsAdminOnly = true }));
+        }
+
+        private static ConfigEntry<int> BindInt(ConfigFile config, string section, string key, int value, int min, int max, string description)
+        {
+            return config.Bind(section, key, value, new ConfigDescription(description,
+                new AcceptableValueRange<int>(min, max), new ConfigurationManagerAttributes { IsAdminOnly = true }));
         }
 
         private static ConfigEntry<string> AdminString(ConfigFile config, string section, string key, string value, string description)

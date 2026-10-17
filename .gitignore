@@ -2,4 +2,5 @@ bin/
 obj/
 /packages/
 riderModule.iml
-/_ReSharper.Caches/
+/_ReSharper.Caches/# Raw vanilla textures extracted by Assets/generate_food_textures.py (game assets, do not commit)
+Vampirizm/Assets/_vanilla_textures/

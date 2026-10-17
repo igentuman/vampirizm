@@ -44,8 +44,19 @@ namespace Vampirizm.Abilities
                     main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 }
             }
-            // Networked effects end through their own timed destruction, which also removes the ZDO.
-            if (!networked) Object.Destroy(effect, EffectLifetime);
+            if (networked) EnsureTimedDestruction(effect);
+            else Object.Destroy(effect, EffectLifetime);
+        }
+
+        // Networked effects must end through TimedDestruction, which also removes the ZDO. Some vanilla effects
+        // (status effect start effects such as fx_GP_Activation) have none or an untriggered one, because their
+        // owner destroys them by hand; without this they would stay in the world forever.
+        private static void EnsureTimedDestruction(GameObject effect)
+        {
+            TimedDestruction timed = effect.GetComponent<TimedDestruction>();
+            if (timed != null && timed.m_triggerOnAwake) return;
+            if (timed == null) timed = effect.AddComponent<TimedDestruction>();
+            timed.Trigger(EffectLifetime);
         }
 
         // Comma-separated prefab list: every entry is spawned.
