@@ -47,7 +47,7 @@ namespace Vampirizm.Items
                 Buffs = new[] { global::Skills.SkillType.Swords, global::Skills.SkillType.Knives, global::Skills.SkillType.Spears, global::Skills.SkillType.Bows } },
             new Definition { Id = PuddingId, Name = "item_vampirizm_black_blood_pudding", Description = "item_vampirizm_black_blood_pudding_description", Icon = "black_blood_pudding", Station = "piece_cauldron", Blood = 35f,
                 Model = "BloodPudding", Tint = new Color(0.45f, 0.25f, 0.3f), Textures = new[] { Tex("bloodpudding_d", "tex_black_blood_pudding") },
-                Ingredients = new[] { "Bloodbag", "BarleyFlour", "Cloudberry" }, Amounts = new[] { 1, 2, 2 },
+                Ingredients = new[] { "GiantBloodSack", "BarleyFlour", "Cloudberry" }, Amounts = new[] { 1, 2, 2 },
                 Buffs = new[] { global::Skills.SkillType.Blocking } },
             new Definition { Id = JellyId, Name = "item_vampirizm_seeker_blood_jelly", Description = "item_vampirizm_seeker_blood_jelly_description", Icon = "seeker_blood_jelly", Station = "piece_cauldron", Blood = 45f,
                 Model = "RoyalJelly", Tint = new Color(0.95f, 0.3f, 0.35f), Textures = new[] { Tex("Jelly_d", "tex_seeker_blood_jelly"), Tex("JellyOuter", "tex_seeker_blood_jelly_outer") },
@@ -55,7 +55,7 @@ namespace Vampirizm.Items
                 Buffs = new[] { global::Skills.SkillType.BloodMagic, global::Skills.SkillType.Jump }, Eitr = 20f, EitrRegen = 0.2f },
             new Definition { Id = AspicId, Name = "item_vampirizm_serpent_blood_aspic", Description = "item_vampirizm_serpent_blood_aspic_description", Icon = "serpent_blood_aspic", Station = "piece_cauldron", Blood = 40f,
                 Model = "SeekerAspic", Tint = new Color(0.9f, 0.25f, 0.3f), Textures = new[] { Tex("Seeker Aspic_d", "tex_serpent_blood_aspic"), Tex("JellyOuter", "tex_seeker_blood_jelly_outer") },
-                Ingredients = new[] { "SerpentMeat", "Bloodbag" }, Amounts = new[] { 2, 1 },
+                Ingredients = new[] { "SerpentMeat", "GiantBloodSack" }, Amounts = new[] { 2, 1 },
                 Buffs = new[] { global::Skills.SkillType.Swim }, Eitr = 25f, EitrRegen = 0.2f }
         };
 

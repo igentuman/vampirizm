@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Globalization;
 using HarmonyLib;
+using Vampirizm.Building;
 using Vampirizm.Core;
 using Vampirizm.Networking;
 
@@ -66,10 +68,20 @@ namespace Vampirizm.Patches
         [HarmonyPostfix, HarmonyPatch(typeof(Player), nameof(Player.SetSleeping))]
         private static void AfterSetSleeping(Player __instance, bool sleep, bool __state)
         {
-            if (!__state || sleep || __instance != Player.m_localPlayer || EnvMan.instance == null) return;
+            if (__instance != Player.m_localPlayer) return;
             var controller = __instance.GetComponent<VampireController>();
             if (controller == null || !controller.IsActiveVampire) return;
-            if (SleepRules.IsDuskWake(EnvMan.instance.GetDayFraction()))
+            CoffinBed coffin = CoffinBed.AttachedTo(__instance);
+            int blood = CoffinRules.WakeBlood(__state, sleep, controller.IsActiveVampire,
+                !__instance.IsDead(), coffin != null ? coffin.Blood : 0);
+            if (blood > 0)
+            {
+                float gained = controller.AddBlood(blood);
+                if (gained > 0f)
+                    __instance.Message(MessageHud.MessageType.TopLeft, global::Localization.instance.Localize(
+                        "$vampirizm_blood_gained", gained.ToString("0.#", CultureInfo.InvariantCulture)));
+            }
+            if (__state && !sleep && EnvMan.instance != null && SleepRules.IsDuskWake(EnvMan.instance.GetDayFraction()))
                 __instance.Message(MessageHud.MessageType.Center, "$vampirizm_good_evening");
         }
 

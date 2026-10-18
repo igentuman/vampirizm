@@ -16,13 +16,13 @@ using Vampirizm.Skills;
 namespace Vampirizm
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInDependency(Jotunn.Main.ModGuid, "2.29.2")]
+    [BepInDependency(Jotunn.Main.ModGuid, "2.30.2")]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Patch)]
     public sealed class Plugin : BaseUnityPlugin
     {
         public const string PluginGuid = "com.igentuman.vampirizm";
         public const string PluginName = "Vampirizm";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "0.3.0";
         internal static Plugin Instance { get; private set; }
         internal VampireConfig Settings { get; private set; }
         private Harmony _harmony;
@@ -41,6 +41,7 @@ namespace Vampirizm
             BloodyStew.Register();
             VampireFoods.Register();
             VampireOrb.Register();
+            Building.Coffins.Register();
             Abilities.Orb.SwarmBatPrefab.Register();
             VampireCommand.Register();
             VampireInput.Register(Config);

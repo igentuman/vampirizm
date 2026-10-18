@@ -36,7 +36,7 @@ New to the mod? Read the simple **[Player Guide](PLAYER_GUIDE.md)**.
 ## Installation
 
 1. Install [BepInEx 5](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/) (tested with 5.4.23.3).
-2. Install [Jotunn 2.29.2](https://github.com/Valheim-Modding/Jotunn/releases/tag/v2.29.2).
+2. Install [Jotunn 2.30.2](https://github.com/Valheim-Modding/Jotunn/releases/tag/v2.30.2).
 3. Copy `Vampirizm.dll` into `BepInEx/plugins/Vampirizm/`.
 
 The server and all clients must run the same Vampirizm version, and Jotunn checks this when you connect. The mod has been tested with Valheim 1.0.17.
@@ -91,9 +91,9 @@ Other cooked dishes, fish and vanilla blood pudding give no blood. The mod adds 
 |---|---|---:|---|---|---|
 | Crimson jerky | Food preparation table | 20 | Run | — | Deer meat ×2 + Bloodbag ×1 |
 | Hunter's tartare | Food preparation table | 30 | Swords, Knives, Spears, Bows | — | Wolf meat ×1 + Bloodbag ×1 + Onion ×1 |
-| Black blood pudding | Cauldron | 35 | Blocking (parry) | — | Bloodbag ×1 + Barley flour ×2 + Cloudberry ×2 |
+| Black blood pudding | Cauldron | 35 | Blocking (parry) | — | Giant blood sack ×1 + Barley flour ×2 + Cloudberry ×2 |
 | Seeker blood jelly | Cauldron | 45 | Blood magic, Jump | +20, regen +20% | Giant blood sack ×1 + Raw seeker meat ×2 + Royal jelly ×2 |
-| Serpent blood aspic | Cauldron | 40 | Swim | +25, regen +20% | Serpent meat ×2 + Bloodbag ×1 |
+| Serpent blood aspic | Cauldron | 40 | Swim | +25, regen +20% | Serpent meat ×2 + Giant blood sack ×1 |
 
 Each vampire food has its own world model: a matching vanilla dish with a custom blood-themed texture (generated from the vanilla texture by `Assets/generate_food_textures.py` and embedded in the DLL), so drops are recognizable on the ground.
 
@@ -140,6 +140,18 @@ To bite, have nothing in your hands (no weapon, shield or torch). Look at a crea
 - **Day sleep.** If you go to bed between the vanilla wake-up time (early morning) and nightfall, and **every player in the world is a vampire in bed**, time skips to just after dusk. You wake with "Good evening" and the Rested bonus, and the sun no longer burns.
 - **Night sleep** works as in vanilla and skips to the next morning.
 - **Mixed groups.** Regular players can't go to bed in the morning or at noon, so a day sleep needs everyone to be a vampire. In the afternoon, when everyone can sleep, a group with at least one regular player skips to the next morning as usual.
+
+Vampires can claim and sleep in two coffins, built with the hammer under **Furniture** near a workbench:
+
+| Coffin | Recipe | Comfort | Blood per completed sleep |
+| --- | --- | --- | --- |
+| Wooden coffin | 7 Wood | 2 | 15 |
+| Vampire's coffin | 7 Ancient bark, 4 Iron, 2 Chain | 5 | 55 |
+
+![Wooden coffin](publish/images/wooden_coffin.png)
+![Vampire's coffin](publish/images/vampires_coffin.png)
+
+Coffins retain bed ownership, respawning, shelter/fire checks and the normal sleep cooldown. Blood is restored once when a living vampire wakes from an actual sleep, capped at blood capacity; simply lying down and getting up grants nothing. Both use the Bed comfort group, so their comfort does not stack with other beds. The wooden coffin has no lid; the vampire coffin's iron-trimmed lid closes while occupied and opens when vacated, including for remote players. The original models, textures, rendered icons and Blender generation script are in `Vampirizm/Assets/Coffins/` (see its README).
 
 ### Abilities
 
@@ -280,7 +292,7 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Thunderstorm sun multiplier | `0` | server | Sun damage multiplier in a thunderstorm; replaces the rain multiplier. |
 | Swamp sun multiplier | `0` | server | Sun damage multiplier in the Swamp. Multiplied with the weather multiplier. |
 | Mistlands sun multiplier | `0` | server | Sun damage multiplier in the Mistlands. |
-| Ashlands sun multiplier | `2` | server | Sun damage multiplier in the Ashlands. |
+| Ashlands sun multiplier | `0.5` | server | Sun damage multiplier in the Ashlands. |
 | Slime item | `Ooze` | server | Prefab ID of the sun-protection item. |
 | Slime duration | `300` | server | Seconds of protection per application. |
 | Slime emote | *(empty)* | server | Vanilla emote to play when applying it, e.g. `flex`. Empty uses the eat animation. |
@@ -401,9 +413,9 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 ### Environment
 
 - **.NET SDK 8** (`global.json`). The plugin targets `net462` and uses C# 8.
-- **JotunnLib 2.29.2**, pinned in the project and in `packages.lock.json`.
+- **JotunnLib 2.29.2**, pinned in the project and in `packages.lock.json`; the plugin requires Jotunn 2.30.2 or newer at runtime.
 - **Valheim 1.0.17** and **BepInEx 5.4.23.3** are verified for building and loading.
-- The game uses the [official Jotunn 2.29.2 release DLL](https://github.com/Valheim-Modding/Jotunn/releases/tag/v2.29.2). The NuGet DLL contains debug components and is not meant for installing into the game.
+- The game uses the [official Jotunn release DLL](https://github.com/Valheim-Modding/Jotunn/releases/tag/v2.30.2). The NuGet DLL contains debug components and is not meant for installing into the game.
 - The game assemblies (`assembly_valheim`, `assembly_utils`, `assembly_guiutils`, `SoftReferenceableAssets`) and Unity's `netstandard.dll` are referenced from the installed game, not from `publicized_assemblies`, so the build can't compile against stale copies.
 
 Jotunn looks for Valheim in the default Steam directory. To use a different directory, set `VALHEIM_INSTALL`, and if needed `VALHEIM_MANAGED` and `BEPINEX_PATH`, as environment variables or MSBuild properties.
@@ -491,7 +503,7 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
 
 ### In-game test checklist
 
-1. Client loads Jotunn 2.29.2 and Vampirizm 0.2.0 (check the log). Dedicated server: not tested yet.
+1. Client loads Jotunn 2.30.2 or newer and Vampirizm 0.3.0 (check the log). Dedicated server: not tested yet.
 2. Convert, add blood and set the level. Then save, restart, and compare `status` and the skills menu.
 3. Cure, switch character or world, die, and lower capacity. A regular character must eat and have stats normally.
 4. Server: commands are refused without admin rights or with debug off, and settings sync.

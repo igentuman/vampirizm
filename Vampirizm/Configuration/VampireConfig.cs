@@ -166,7 +166,7 @@ namespace Vampirizm.Configuration
                 "Sunlight damage multiplier in the Swamp. Combined with the weather multiplier. Zero disables burning.");
             MistlandsSunMultiplier = Weakness(config, "Mistlands sun multiplier", 0f, 0f, 10f,
                 "Sunlight damage multiplier in the Mistlands. Combined with the weather multiplier. Zero disables burning.");
-            AshlandsSunMultiplier = Weakness(config, "Ashlands sun multiplier", 2f, 0f, 10f,
+            AshlandsSunMultiplier = Weakness(config, "Ashlands sun multiplier", 0.5f, 0f, 10f,
                 "Sunlight damage multiplier in the Ashlands. Combined with the weather multiplier. Zero disables burning.");
             SlimeItem = AdminString(config, "Weaknesses", "Slime item", "Ooze", "Prefab ID of the item applied as sun protection.");
             SlimeDuration = Weakness(config, "Slime duration", 300f, 1f, 7200f,
