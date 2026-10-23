@@ -31,6 +31,23 @@ namespace Vampirizm.Abilities
             if (template != null) Instantiate(template, point, rotation, scale, false);
         }
 
+        internal static void SpawnLocalSound(string name, Vector3 point, float volume)
+        {
+            GameObject template = LocalCopy(name, null);
+            if (template == null) return;
+            // Configure under the inactive template root before Awake/Start can play anything.
+            GameObject effect = Object.Instantiate(template, _templateRoot.transform);
+            foreach (ZSFX sound in effect.GetComponentsInChildren<ZSFX>(true))
+            {
+                sound.m_minVol *= volume;
+                sound.m_maxVol *= volume;
+            }
+            foreach (AudioSource source in effect.GetComponentsInChildren<AudioSource>(true)) source.volume *= volume;
+            effect.transform.position = point;
+            effect.transform.SetParent(null, true);
+            Object.Destroy(effect, EffectLifetime);
+        }
+
         private static void Instantiate(GameObject prefab, Vector3 point, Quaternion rotation, float scale, bool networked)
         {
             GameObject effect = Object.Instantiate(prefab, point, rotation);

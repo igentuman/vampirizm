@@ -22,7 +22,7 @@ namespace Vampirizm
     {
         public const string PluginGuid = "com.igentuman.vampirizm";
         public const string PluginName = "Vampirizm";
-        public const string PluginVersion = "0.3.0";
+        public const string PluginVersion = "0.4.0";
         internal static Plugin Instance { get; private set; }
         internal VampireConfig Settings { get; private set; }
         private Harmony _harmony;
@@ -82,7 +82,11 @@ namespace Vampirizm
         {
             _harmony?.UnpatchSelf();
             foreach (var controller in UnityEngine.Object.FindObjectsByType<Core.VampireController>(UnityEngine.FindObjectsSortMode.None))
+            {
+                controller.BloodRage?.End();
                 controller.Invisibility?.End(false);
+            }
+            Effects.BloodRageEffect.Clear();
             Instance = null;
         }
     }

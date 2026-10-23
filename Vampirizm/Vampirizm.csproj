@@ -61,11 +61,16 @@
         <EmbeddedResource Include="Assets/tex_seeker_blood_jelly.png" LogicalName="Vampirizm.Assets.tex_seeker_blood_jelly.png" />
         <EmbeddedResource Include="Assets/tex_seeker_blood_jelly_outer.png" LogicalName="Vampirizm.Assets.tex_seeker_blood_jelly_outer.png" />
         <EmbeddedResource Include="Assets/tex_serpent_blood_aspic.png" LogicalName="Vampirizm.Assets.tex_serpent_blood_aspic.png" />
+        <EmbeddedResource Include="Assets/bloodrage.png" LogicalName="Vampirizm.Assets.bloodrage.png" />
+        <EmbeddedResource Include="Assets/bloodrage_gui.png" LogicalName="Vampirizm.Assets.bloodrage_gui.png" />
         <EmbeddedResource Include="Assets/bat.png" LogicalName="Vampirizm.Assets.bat.png" />
         <EmbeddedResource Include="Assets/invisibility.png" LogicalName="Vampirizm.Assets.invisibility.png" />
         <EmbeddedResource Include="Assets/dash.png" LogicalName="Vampirizm.Assets.dash.png" />
         <EmbeddedResource Include="Assets/orb_of_vampire.png" LogicalName="Vampirizm.Assets.orb_of_vampire.png" />
         <EmbeddedResource Include="Assets/tex_orb_of_vampire.png" LogicalName="Vampirizm.Assets.tex_orb_of_vampire.png" />
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Assets\boss\" />
     </ItemGroup>
     <Target Name="DeployVampirizm" AfterTargets="Build" Condition="'$(DeployVampirizmOnBuild)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(VampirizmDeployPath)' != ''">
         <MakeDir Directories="$(VampirizmDeployPath)" />

@@ -53,7 +53,7 @@ namespace Vampirizm.Abilities
         {
             var settings = Plugin.Instance.Settings;
             AbilityBlock block = AbilityRules.Check(_controller.IsActiveVampire, _controller.Level, settings.DashLevel.Value,
-                IsBusy(), Time.time, _readyAt, _controller.State.Blood, settings.DashCost.Value);
+                IsBusy() || _controller.BloodRage.Combat.Busy, Time.time, _readyAt, _controller.State.Blood, settings.DashCost.Value);
             if (block == AbilityBlock.None)
             {
                 Vector3 direction = Direction();

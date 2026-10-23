@@ -7,6 +7,7 @@ using Vampirizm.Feeding;
 using Vampirizm.Networking;
 using Vampirizm.Persistence;
 using Vampirizm.Skills;
+using Vampirizm.Visuals;
 
 namespace Vampirizm.Core
 {
@@ -20,12 +21,14 @@ namespace Vampirizm.Core
         private float _regenTimer;
         private readonly SunlightController _sun = new SunlightController();
         private readonly SilverContactController _silver = new SilverContactController();
+        private VampireAppearance _appearance;
         internal VampireState State { get; private set; } = new VampireState();
         internal DrainAbility Drain { get; private set; }
         internal DrainVisual DrainVisual { get; private set; }
         internal DashAbility Dash { get; private set; }
         internal InvisibilityAbility Invisibility { get; private set; }
         internal BatFormAbility BatForm { get; private set; }
+        internal BloodRageAbility BloodRage { get; private set; }
         internal OrbCaster Orb { get; private set; }
         internal bool CanChange => _loaded && !_preserveSave && IsLocalOwner && !_player.IsDead();
         // Vampire rules (food ban, blood stats, HUD) apply only to the loaded local character.
@@ -45,22 +48,28 @@ namespace Vampirizm.Core
         {
             _player = GetComponent<Player>();
             _view = GetComponent<ZNetView>();
+            _appearance = new VampireAppearance(_player);
             Drain = new DrainAbility(_player, this);
             DrainVisual = new DrainVisual(_player);
             Dash = new DashAbility(_player, this);
             Invisibility = new InvisibilityAbility(_player, this);
             BatForm = new BatFormAbility(_player, this);
+            BloodRage = new BloodRageAbility(_player, this);
             Orb = new OrbCaster(_player, this);
         }
 
         private void OnDisable()
         {
+            BloodRage?.End();
+            _appearance?.Clear();
             Dash?.End();
             Invisibility?.End(false);
         }
 
         private void OnDestroy()
         {
+            BloodRage?.End();
+            _appearance?.Clear();
             Drain?.End();
             Dash?.End();
             Invisibility?.End(false);
@@ -78,6 +87,7 @@ namespace Vampirizm.Core
             {
                 VampireNetwork.SetBatForm(_view, false);
                 VampireNetwork.SetDrinkTarget(_view, ZDOID.None);
+                BloodRage.End();
                 Invisibility.End();
             }
             if (_preserveSave) Plugin.Warn($"Vampirism save: {result}. Original data preserved; changes disabled for this character.");
@@ -89,6 +99,7 @@ namespace Vampirizm.Core
             if (Plugin.Instance == null) return;
             if (!IsLocalOwner)
             {
+                BloodRage.UpdateRemote();
                 Invisibility.UpdateRemote();
                 BatForm.Update(Time.deltaTime);
                 DrainVisual.Update();
@@ -101,6 +112,7 @@ namespace Vampirizm.Core
             Invisibility.UpdateLocal(Time.unscaledDeltaTime);
             BatForm.Update(Time.deltaTime);
             Orb.Update();
+            BloodRage.UpdateLocal();
             if (IsActiveVampire) ReadActions();
             _refreshTimer -= Time.unscaledDeltaTime;
             if (_refreshTimer > 0f) return;
@@ -112,11 +124,17 @@ namespace Vampirizm.Core
         {
             // Recover any interrupted camera render; transparency itself is camera-scoped.
             Invisibility?.UpdateVisual();
+            if (Plugin.Instance != null && SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                _appearance?.Update();
+                BloodRage?.UpdateVisual();
+            }
         }
 
         // Ordinary characters keep their keys for anything else: vampire actions are read only for an active vampire.
         private void ReadActions()
         {
+            if (VampireInput.Pressed(_player, VampireAction.BloodRage)) BloodRage.Toggle();
             if (VampireInput.Pressed(_player, VampireAction.Dash)) Dash.TryStart();
             if (VampireInput.Pressed(_player, VampireAction.Invisibility))
                 Invisibility.Toggle();
@@ -146,6 +164,7 @@ namespace Vampirizm.Core
         internal bool Cure()
         {
             if (!CanChange || !State.IsVampire) return false;
+            BloodRage.End();
             State.Cure();
             Drain.End();
             Dash.End();
@@ -182,6 +201,7 @@ namespace Vampirizm.Core
         internal void OnDeath()
         {
             if (!IsActiveVampire || !CanChange) return;
+            BloodRage.End();
             State.LoseOnDeath(Plugin.Instance.Settings.DeathBloodKept.Value);
             SaveState();
         }

@@ -13,7 +13,11 @@ namespace Vampirizm.Patches
             if (__instance == null) return;
             Player player = __instance.GetComponent<Player>();
             if (player == Player.m_localPlayer)
-                player.GetComponent<VampireController>()?.BatForm.SetInputAllowed(__result);
+            {
+                var controller = player.GetComponent<VampireController>();
+                controller?.BatForm.SetInputAllowed(__result);
+                controller?.BloodRage.Combat.SetInputAllowed(__result);
+            }
         }
 
         // During a dash the player only travels: no steering, attacks, bite, block, jump or dodge roll.

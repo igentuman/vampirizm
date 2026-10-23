@@ -222,7 +222,7 @@ namespace Vampirizm.Abilities
         private static float Jitter(float interval) => interval * Random.Range(0.5f, 1.5f);
 
         private bool IsBusy()
-            => !_controller.CanChange || _controller.Drain.Active || _controller.Dash.Active || _active ||
+            => !_controller.CanChange || _controller.BloodRage.Active || _controller.Drain.Active || _controller.Dash.Active || _active ||
                _player.InAttack() || _player.InDodge() || _player.IsStaggering() || _player.IsAttached() ||
                _player.IsSwimming() || _player.IsTeleporting() || _player.InEmote() || _player.IsKnockedBack();
 
@@ -313,29 +313,51 @@ namespace Vampirizm.Abilities
 
     internal static class BatTransformationEffect
     {
-        // A self-contained blood-red and violet burst: no external asset names or extra DLL resources required.
+        // Local world-space puffs linger at the transformation point as either form moves away.
         internal static void Play(Vector3 position)
         {
+            Material material = SmokeParticleMaterial.GetMaterial();
+            if (material == null) return;
             var root = new GameObject("VampirizmBatTransformation");
             root.transform.position = position + Vector3.up * 0.8f;
             var particles = root.AddComponent<ParticleSystem>();
+            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = particles.main;
-            main.duration = 0.8f;
+            main.duration = 0.2f;
             main.loop = false;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 1.15f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 8f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.28f);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.75f, 0.04f, 0.12f), new Color(0.42f, 0.08f, 0.75f));
-            main.gravityModifier = -0.35f;
-            main.maxParticles = 128;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.7f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.25f, 0.7f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.85f, 1.35f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.22f, 0.17f, 0.27f, 0.24f), new Color(0.34f, 0.23f, 0.29f, 0.32f));
+            main.gravityModifier = -0.025f;
+            main.maxParticles = 18;
             var emission = particles.emission;
-            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 96) });
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 18) });
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.25f;
+            shape.radius = 0.55f;
+            var size = particles.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.6f, 1f, 2f));
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.12f),
+                    new GradientAlphaKey(0.5f, 0.5f), new GradientAlphaKey(0f, 1f) });
             var color = particles.colorOverLifetime;
             color.enabled = true;
-            color.color = new ParticleSystem.MinMaxGradient(new Color(1f, 0.12f, 0.18f, 1f), new Color(0.3f, 0.05f, 0.6f, 0f));
+            color.color = new ParticleSystem.MinMaxGradient(gradient);
+            var renderer = root.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sortMode = ParticleSystemSortMode.Distance;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
             particles.Play();
             Object.Destroy(root, 2f);
         }

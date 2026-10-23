@@ -129,7 +129,7 @@ namespace Vampirizm.Abilities
         }
 
         private bool IsBusy()
-            => _controller.Drain.Active || _controller.Dash.Active || _controller.BatForm.Active || _player.InAttack() || _player.InDodge() ||
+            => _controller.BloodRage.Active || _controller.Drain.Active || _controller.Dash.Active || _controller.BatForm.Active || _player.InAttack() || _player.InDodge() ||
                _player.IsStaggering() || _player.IsAttached() || _player.IsTeleporting() || _player.InEmote();
 
         private static string Message(AbilityBlock block, float level)

@@ -54,7 +54,9 @@ namespace Vampirizm.Abilities.Orb
             }
             ZNetView view = clone.GetComponent<ZNetView>();
             if (view != null) view.m_persistent = false;
-            character.m_name = "$vampirizm_swarm_bat";
+            // EnemyHud checks m_hideHud before creating a nameplate and health bar, regardless of the name.
+            character.m_hideHud = true;
+            character.m_name = "";
             character.m_faction = Character.Faction.Players;
             character.m_boss = false;
             character.m_flying = true;

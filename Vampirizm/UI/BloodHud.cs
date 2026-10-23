@@ -11,8 +11,6 @@ namespace Vampirizm.UI
         private const float Gap = 6f;
         // Power names such as "The Queen" overflow the slot, so the bar keeps extra distance from it.
         private const float PowerGap = 14f;
-        // The measured health bar root sits above the visible bar art; this lines the bottoms up.
-        private const float BottomNudge = -18f;
         // Drop center below the bar bottom, as a fraction of bar width, level with the vanilla heart icon.
         private const float IconDrop = 0.45f;
         private const float Inset = 2f;
@@ -114,7 +112,8 @@ namespace Vampirizm.UI
             Vector2 size = max - min;
             _root.sizeDelta = new Vector2(size.x + 1f, size.y);
             // Anchored to the parent's center, while the measured bounds are relative to its pivot.
-            _root.anchoredPosition = new Vector2(left + settings.HudOffsetX.Value, min.y + BottomNudge + settings.HudOffsetY.Value)
+            // Match the health bar bottom; the drop follows as a child of this root.
+            _root.anchoredPosition = new Vector2(left + settings.HudOffsetX.Value, min.y + settings.HudOffsetY.Value)
                 - parent.rect.center;
             _icon.sizeDelta = new Vector2(size.x * IconScale, size.x * IconScale);
             _icon.anchoredPosition = new Vector2(0f, -size.x * IconDrop);

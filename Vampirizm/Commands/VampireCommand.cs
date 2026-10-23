@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Jotunn.Managers;
 using Vampirizm.Core;
 
 namespace Vampirizm.Commands
@@ -9,7 +8,7 @@ namespace Vampirizm.Commands
     internal sealed class VampireCommand
     {
         public string Name => "vampirizm";
-        public string Help => "status | convert | cure | blood <amount> | level <0..100> (self only; requires devcommands, mutations also require admin and Debug.Enable commands)";
+        public string Help => "status | convert | cure | blood <amount> | level <0..100> (self only; requires devcommands)";
         public List<string> CommandOptionList() => new List<string> { "status", "convert", "cure", "blood", "level" };
 
         internal static void Register()
@@ -41,11 +40,6 @@ namespace Vampirizm.Commands
             if (command == "status" && args.Length <= 1)
             {
                 Status(context, controller);
-                return;
-            }
-            if (!Plugin.Instance.Settings.DebugCommands.Value || !SynchronizationManager.Instance.PlayerIsAdmin)
-            {
-                Reply(context, "vampirizm_admin_required");
                 return;
             }
             if (!controller.CanChange)

@@ -143,7 +143,11 @@ namespace Vampirizm.Patches
         private static void AfterModifySkillLevel(Character ___m_character, global::Skills.SkillType skill, ref float level)
         {
             if (ActiveVampire(___m_character) != null)
+            {
                 level += VampireFoods.SkillLevelBonus((Player)___m_character, skill);
+                if (BloodRageEffect.IsActive((Player)___m_character) && BloodRageEffect.Buffs(skill))
+                    level += BloodRageEffect.SkillBonus;
+            }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip),

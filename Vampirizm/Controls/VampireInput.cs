@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Vampirizm.Controls
 {
-    internal enum VampireAction { Dash, Invisibility, BatForm }
+    internal enum VampireAction { Dash, Invisibility, BatForm, BloodRage }
 
     internal sealed class VampireBinding
     {
@@ -26,7 +26,7 @@ namespace Vampirizm.Controls
         }
     }
 
-    // Three independent actions registered through Jotunn. The local BepInEx config is the source of truth:
+    // Independent actions registered through Jotunn. The local BepInEx config is the source of truth:
     // Jotunn rebuilds the bindings from it on every ZInput.Load, so rebinds from the Controls menu are mirrored back.
     internal static class VampireInput
     {
@@ -45,6 +45,7 @@ namespace Vampirizm.Controls
             Add(config, VampireAction.Dash, "Dash", KeyCode.LeftAlt);
             Add(config, VampireAction.Invisibility, "Invisibility", KeyCode.H);
             Add(config, VampireAction.BatForm, "Bat form", KeyCode.B);
+            Add(config, VampireAction.BloodRage, "Blood rage", KeyCode.Q);
         }
 
         private static void Add(ConfigFile config, VampireAction action, string title, KeyCode key)
@@ -111,7 +112,7 @@ namespace Vampirizm.Controls
             }
 
             // SettingChanged normally saves this too; explicitly flush after the complete
-            // rebind so all three bindings are written together after Valheim's own save.
+            // rebind so all bindings are written together after Valheim's own save.
             if (changed) Plugin.SaveControlSettings();
         }
 

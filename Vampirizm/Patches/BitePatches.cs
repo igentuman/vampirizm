@@ -17,7 +17,7 @@ namespace Vampirizm.Patches
         {
             if (__instance != Player.m_localPlayer) return;
             var controller = __instance.GetComponent<VampireController>();
-            if (controller == null || !controller.IsActiveVampire) return;
+            if (controller == null || !controller.IsActiveVampire || controller.BloodRage.Active) return;
             bool unarmed = ___m_rightItem == null && ___m_leftItem == null;
             bool batForm = controller.BatForm.Active;
             if (unarmed || batForm || controller.Drain.Active)
@@ -40,11 +40,16 @@ namespace Vampirizm.Patches
         private static void AfterCharacterAwake(Character __instance)
         {
             DrainNetwork.RegisterCharacter(__instance);
+            BloodRageNetwork.Register(__instance);
             if (__instance is Player player) RitualEffect.Register(player);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(Game), "Start")]
-        private static void AfterGameStart() => DrainNetwork.RegisterRouted();
+        private static void AfterGameStart()
+        {
+            DrainNetwork.RegisterRouted();
+            BloodRageNetwork.RegisterRouted();
+        }
 
         // A held victim stands still; its AI resumes as soon as the session ends or times out.
         [HarmonyPrefix, HarmonyPatch(typeof(BaseAI), nameof(BaseAI.UpdateAI))]

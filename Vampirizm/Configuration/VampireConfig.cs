@@ -13,7 +13,6 @@ namespace Vampirizm.Configuration
             "HareMeat:12, BjornMeat:18, AsksvinMeat:22, VoltureMeat:22, " +
             "Bloodbag:25, GiantBloodSack:35";
 
-        internal ConfigEntry<bool> DebugCommands { get; }
         internal ConfigEntry<float> BaseCapacity { get; }
         internal ConfigEntry<float> CapacityPerLevel { get; }
         internal ConfigEntry<float> InitialBloodFraction { get; }
@@ -75,6 +74,7 @@ namespace Vampirizm.Configuration
         internal ConfigEntry<float> EitrRegenLevels { get; }
         internal ConfigEntry<float> HudOffsetX { get; }
         internal ConfigEntry<float> HudOffsetY { get; }
+        internal ConfigEntry<float> BloodRageLevel { get; }
         internal ConfigEntry<float> DashLevel { get; }
         internal ConfigEntry<float> DashCost { get; }
         internal ConfigEntry<float> DashCooldown { get; }
@@ -121,9 +121,6 @@ namespace Vampirizm.Configuration
 
         internal VampireConfig(ConfigFile config)
         {
-            DebugCommands = config.Bind("Debug", "Enable commands", false,
-                new ConfigDescription("Allow admins to change their own vampirism, blood and skill for testing.",
-                    null, new ConfigurationManagerAttributes { IsAdminOnly = true }));
             BaseCapacity = Bind(config, "Base capacity", 100f, 1f, 10000f, "Blood capacity at skill level zero.");
             CapacityPerLevel = Bind(config, "Capacity per level", 2f, 0f, 1000f, "Additional blood capacity per skill level.");
             InitialBloodFraction = Bind(config, "Initial blood fraction", 0.25f, 0f, 1f, "Fraction of capacity granted once on conversion.");
@@ -169,7 +166,7 @@ namespace Vampirizm.Configuration
             AshlandsSunMultiplier = Weakness(config, "Ashlands sun multiplier", 0.5f, 0f, 10f,
                 "Sunlight damage multiplier in the Ashlands. Combined with the weather multiplier. Zero disables burning.");
             SlimeItem = AdminString(config, "Weaknesses", "Slime item", "Ooze", "Prefab ID of the item applied as sun protection.");
-            SlimeDuration = Weakness(config, "Slime duration", 300f, 1f, 7200f,
+            SlimeDuration = Weakness(config, "Slime duration", 600f, 600f, 7200f,
                 "Seconds of sun protection per application. Reapplying refreshes, never stacks. Any Wet effect removes it.");
             SlimeEmote = AdminString(config, "Weaknesses", "Slime emote", "",
                 "Vanilla emote played when applying slime (for example: flex, cheer). Empty plays the eat animation.");
@@ -238,6 +235,7 @@ namespace Vampirizm.Configuration
             HudOffsetY = config.Bind("HUD", "Offset Y", 0f, "Blood bar vertical offset from the bottom of the health bar.");
             UnarmedDamageMultiplier = Bind(config, "Abilities", "Unarmed damage multiplier", 5f, 1f, 100f,
                 "Bare-handed damage multiplier at Vampirism skill 100. Scales linearly from 1 at skill 0.");
+            BloodRageLevel = Bind(config, "Abilities", "Blood rage level", 20f, 0f, 100f, "Vampirism skill level required to activate Blood Rage.");
             DashLevel = Bind(config, "Abilities", "Dash level", 10f, 0f, 100f, "Vampirism skill level that unlocks the dash.");
             DashCost = Bind(config, "Abilities", "Dash blood cost", 5f, 0f, 1000f, "Blood spent per dash.");
             DashCooldown = Bind(config, "Abilities", "Dash cooldown", 2f, 0f, 60f, "Seconds between dashes.");

@@ -7,6 +7,7 @@ New to the mod? Read the simple **[Player Guide](PLAYER_GUIDE.md)**.
 ## Features
 
 - **Vampire state and skill.** A new `Vampirism` skill (0–100) that grows by drinking blood. It is saved with the character and synced to other players.
+- **Vampire appearance.** Red eyes and small ivory fangs on both vanilla character models, visible to other players. Curing restores the normal appearance.
 - **Blood instead of food.** Vampires cannot eat food. Maximum health, stamina and regeneration come from stored blood. Meads still work. Blood drains slowly over time.
 - **Passive eitr.** From Vampirism level 50 you get an eitr bar that grows with the skill: 300 eitr and 11 eitr/s at level 100.
 - **Blood HUD.** A vertical blood bar with a blood drop icon sits right of the health bar and forsaken power and matches the health bar size. It pulses when blood is low.
@@ -25,6 +26,7 @@ New to the mod? Read the simple **[Player Guide](PLAYER_GUIDE.md)**.
   - Use the craftable **Vampire Rune** on a clear night under open sky.
 - **Abilities**, unlocked by skill level:
   - **Dash** (level 10): a short, fast burst of movement.
+  - **Blood Rage** (level 20, configurable): timed physical skill buffs, a four-hit claw combo, lunging secondary, cosmetic wings and a red glint.
   - **Invisibility** (level 25): mobs and bosses ignore you and other players can't see you.
   - **Bat form** (level 50): fly as a bat and bite from the air.
 - **Orb of Vampire.** A craftable one-handed orb that summons blood bats: a swarm that bites the creature you aim at and brings back blood, or a circle of bats that guards you and takes creature hits. Costs eitr, uses Blood magic.
@@ -160,6 +162,7 @@ Abilities unlock as your Vampirism skill grows. They work only when you are a va
 | Ability | Default key | Unlocks at | Cost |
 |---|---|---|---|
 | Dash | `Left Alt` | level 10 | 5 blood, 2 s cooldown |
+| Blood Rage | Q | level 20 | 25 blood, lasts 90 s, 60 s cooldown after exiting |
 | Invisibility | `H` (toggle) | level 25 | 5 blood to activate, 15 blood/min while active, 2 s cooldown after exiting |
 | Bat form | `B` (toggle) | level 50 | 5 blood to activate, 20 extra blood/min while active, 2 s cooldown after exiting |
 
@@ -171,6 +174,8 @@ Unlocked abilities appear as icons in the bottom-left corner of the HUD. Icons t
   - It stops just before walls, steep slopes and creatures. If there is no room, it doesn't start and costs nothing.
   - You can't dash in the air, in water, while biting, attacking, dodging, sitting, overweight or in build mode.
   - There is no invulnerability during a dash.
+- **Blood Rage.** Press **Q** (rebind "Vampire: blood rage" in Settings → Controls). Pressing the ability key again while active has no effect. While its status icon counts down, gain +20 effective Run, Jump, Dodge, Blocking, Unarmed, Swim and Sneak, additive with food; normal skill effectiveness caps remain. Jumps gain an additional 25% height without changing horizontal speed. Long curved claws, an open empty-hand pose, animated textured cave-bat wings that react to movement and jump takeoff and a pulsing red glint appear on local and remote characters. Cape equipment is excluded from the glint. The effect ends on death, cure, teleport, disable or expiry and is not saved. Cooldown starts on exit. Invisibility and Bat Form cannot be activated during Rage. Hand equipment is unequipped and restored on exit when still owned; weapons, shields, torches and tools cannot be equipped during Rage. Primary attack performs right slash → left slash → rising right slash → two-hand descending slash, with a one-input combo buffer. Each primary deals equivalent bare-fist damage +15 as slash damage and takes 80% of the corresponding fist clip duration, capped at 0.6 seconds. Secondary uses the normal secondary binding for a two-handed swing dealing 3× primary claw damage, in 0.65 seconds, with a 2-second cooldown even on misses. It automatically dashes up to 7 m toward the nearest visible attackable mob whose body intersects an 18° horizontal aim cone within 10 m; without a target it dashes up to 7 m straight forward. The lunge leaves a blood streak and red claw streaks, with a short camera kick on takeoff. Jumping and camera pitch do not disable target acquisition. Primary body motion comes from the faster native fist clips, with open-hand curved claw sweeps replacing punches. Airborne lunges move horizontally and are allowed once until landing, retaining the normal jump/fall trajectory and fall damage. Primary swings spend ordinary primary unarmed stamina; secondary costs 3 additional stamina after modifiers. Confirmed damage to one or more eligible blood donors restores 5 blood total per swing, including killing blows. Non-donors and misses give no blood. Blocking/parrying and dodging are available between attacks; Rage blocks Orb casting and clears existing Orb bats on entry. Local and remote motions use procedural player-rig poses; animation fit, lunge physics and multiplayer timing still need in-game validation.
+
 - **Invisibility.**
   - Other players can't see you, and mobs and bosses won't target you. You see yourself as semi-transparent.
   - It ends when you attack, use an item, take damage, bite, dash, die or teleport, or when you press the key again.
@@ -208,17 +213,16 @@ Death keeps your vampire status but halves your stored blood (see `Blood kept on
 
 ## Commands
 
-Commands are for testing and admins. To use them:
+Commands are for testing and require the game's cheats to be enabled. To use them:
 
 1. Enable the in-game console, e.g. with the `-console` launch option.
 2. Run `devcommands`.
-3. For any command other than `status`, set `[Debug] Enable commands = true` in the server config (the local config in single-player). You must also be an admin.
 
 The `vampirizm` command is hidden from `help` and autocomplete, and it only ever affects your own character.
 
 | Command | Action |
 |---|---|
-| `vampirizm status` | Show your blood, capacity and skill level. No admin rights needed. |
+| `vampirizm status` | Show your blood, capacity and skill level. |
 | `vampirizm convert` | Turn yourself into a vampire (at least level 1), grant the starting blood and clear current food. Running it again does not refill blood. |
 | `vampirizm cure` | Remove vampirism and reset blood to zero. The skill level is kept. |
 | `vampirizm blood <amount>` | Add up to `<amount>` blood, up to your capacity. |
@@ -226,24 +230,15 @@ The `vampirizm` command is hidden from `help` and autocomplete, and it only ever
 
 Commands that change state are refused if:
 
-- you are not an admin
-- debug is off on the server
+- `devcommands` is off
 - your character isn't loaded or is dead
 - you run them from a dedicated server console with no character
-
-This is a co-op safeguard. It doesn't stop a modified client.
 
 ## Configuration
 
 The config file is `BepInEx/config/com.igentuman.vampirizm.cfg`, and it is created on first launch. Settings marked **server** are admin-only: in multiplayer, the server's values are synced to all clients through Jotunn. Settings marked **local** belong to each player.
 
 Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
-
-### `[Debug]`
-
-| Setting | Default | Scope | Description |
-|---|---|---|---|
-| Enable commands | `false` | server | Allow admins to run the `vampirizm` commands that change state. |
 
 ### `[Blood]`
 
@@ -338,6 +333,7 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Setting | Default | Scope | Description |
 |---|---|---|---|
 | Unarmed damage multiplier | `5` | server | Bare-handed damage multiplier at skill 100. Scales linearly from ×1 at skill 0. |
+| Blood rage level | `20` | server | Minimum Vampirism level to activate Blood Rage. |
 | Dash level | `10` | server | Skill level that unlocks the dash. |
 | Dash blood cost | `5` | server | Blood spent per dash. |
 | Dash cooldown | `2` | server | Seconds between dashes. |
@@ -406,7 +402,8 @@ Item and creature lists are comma-separated, case-sensitive Valheim prefab IDs.
 | Dash key | `LeftAlt` | local | Keyboard or mouse key. Rebinding in the Controls menu saves here, and clearing a key saves `None`. |
 | Invisibility key | `H` | local | Same as above. |
 | Bat form key | `B` | local | Same as above. |
-| Dash / Invisibility / Bat form gamepad button | `None` | local | Gamepad button. It can be set only here, because Valheim cancels rebinding when a gamepad button is pressed. Every gamepad button already has a vanilla action, so pick one you don't use. |
+| Blood rage key | `Q` | local | Rebind in the Controls menu or here. Existing saved bindings, including `None`, are preserved. |
+| Dash / Invisibility / Bat form / Blood rage gamepad button | `None` | local | Gamepad button. It can be set only here, because Valheim cancels rebinding when a gamepad button is pressed. Every gamepad button already has a vanilla action, so pick one you don't use. |
 
 ## Development
 
@@ -503,7 +500,7 @@ The plugin installs each Harmony patch class on its own. If one patch fails beca
 
 ### In-game test checklist
 
-1. Client loads Jotunn 2.30.2 or newer and Vampirizm 0.3.0 (check the log). Dedicated server: not tested yet.
+1. Client loads Jotunn 2.30.2 or newer and Vampirizm 0.4.0 (check the log). Dedicated server: not tested yet.
 2. Convert, add blood and set the level. Then save, restart, and compare `status` and the skills menu.
 3. Cure, switch character or world, die, and lower capacity. A regular character must eat and have stats normally.
 4. Server: commands are refused without admin rights or with debug off, and settings sync.

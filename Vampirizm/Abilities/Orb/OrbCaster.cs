@@ -95,10 +95,12 @@ namespace Vampirizm.Abilities.Orb
 
         private void Release()
         {
-            if (!_controller.IsActiveVampire || _player.IsDead()) return;
+            if (!_controller.IsActiveVampire || _player.IsDead() || _controller.BloodRage.Active) return;
             Vector3 aim = _player.GetLookDir();
             Vector3 orb = OrbPoint();
             OrbEffects.Flash(orb);
+            // Dead raiser's blood-magic summon sound; the owner spawns it once for all nearby clients.
+            EffectSpawner.Spawn("sfx_skull_summon_skeleton", orb, Quaternion.identity, 1f, true);
             Vector3 origin = orb + aim * 0.5f;
             if (_secondary)
             {
@@ -118,7 +120,7 @@ namespace Vampirizm.Abilities.Orb
         }
 
         private bool IsBusy()
-            => !_controller.CanChange || _controller.BatForm.Active || _controller.Dash.Active || _controller.Drain.Active ||
+            => !_controller.CanChange || _controller.BloodRage.Active || _controller.BatForm.Active || _controller.Dash.Active || _controller.Drain.Active ||
                _player.InAttack() || _player.InDodge() || _player.IsStaggering() || _player.IsAttached() ||
                _player.IsSwimming() || _player.IsTeleporting() || _player.InEmote() || _player.IsKnockedBack();
 

@@ -39,7 +39,7 @@ namespace Vampirizm.Effects
                 return true;
             }
             if (!inventory.RemoveOneItem(item)) return true;
-            float duration = Plugin.Instance.Settings.SlimeDuration.Value;
+            float duration = Mathf.Max(600f, Plugin.Instance.Settings.SlimeDuration.Value);
             SEMan seman = player.GetSEMan();
             StatusEffect active = seman.GetStatusEffect(EffectHash);
             if (active != null)

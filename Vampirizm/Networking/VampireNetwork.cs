@@ -5,6 +5,7 @@ namespace Vampirizm.Networking
 {
     internal static class VampireNetwork
     {
+        internal const string BloodRageKey = "com.igentuman.vampirizm.bloodrage";
         internal const string VampireKey = "com.igentuman.vampirizm.vampire";
         internal const string BloodKey = "com.igentuman.vampirizm.blood";
         internal const string LevelKey = "com.igentuman.vampirizm.level";
@@ -23,6 +24,19 @@ namespace Vampirizm.Networking
 
         internal static ZDOID GetDrinkTarget(ZNetView view)
             => view != null && view.IsValid() ? view.GetZDO().GetZDOID(DrinkTargetHash) : ZDOID.None;
+
+        internal static void SetBloodRage(ZNetView view, bool active)
+        {
+            if (view == null || !view.IsValid() || !view.IsOwner()) return;
+            if (view.GetZDO().GetBool(BloodRageKey) != active) view.GetZDO().Set(BloodRageKey, active);
+        }
+
+        internal static bool IsBloodRage(Player player)
+        {
+            if (player == Player.m_localPlayer) return player.GetComponent<VampireController>()?.BloodRage?.Active == true;
+            var view = player.GetComponent<ZNetView>();
+            return view != null && view.IsValid() && view.GetZDO().GetBool(BloodRageKey);
+        }
 
         internal static void SetInvisible(ZNetView view, bool invisible)
         {

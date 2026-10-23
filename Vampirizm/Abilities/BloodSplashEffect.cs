@@ -24,6 +24,28 @@ namespace Vampirizm.Abilities
             Object.Destroy(root, 2f);
         }
 
+        internal static void PlayRage(Vector3 position)
+        {
+            // Independent preset: bite splashes retain their existing size and particle counts.
+            var root = new GameObject("VampirizmRageBloodSplash");
+            root.transform.position = position;
+            CreateDroplets(root.transform);
+            CreateMist(root.transform);
+            foreach (var particles in root.GetComponentsInChildren<ParticleSystem>())
+            {
+                var shape = particles.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                var main = particles.main;
+                main.startSpeedMultiplier *= 2.5f;
+                main.startSizeMultiplier *= 1.8f;
+                main.maxParticles = 48;
+                var emission = particles.emission;
+                emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 18, 28) });
+                particles.Play();
+            }
+            Object.Destroy(root, 2f);
+        }
+
         private static void CreateDroplets(Transform parent)
         {
             var particles = CreateSystem(parent, "Droplets");

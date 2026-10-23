@@ -17,6 +17,7 @@ namespace Vampirizm.UI
         private Slot _dash;
         private Slot _invisibility;
         private Slot _bat;
+        private Slot _rage;
 
         private void Awake()
         {
@@ -29,10 +30,11 @@ namespace Vampirizm.UI
             if (_hud.m_rootObject == null) return;
             _root = CreateRect("VampirizmAbilities", _hud.m_rootObject.transform);
             _root.anchoredPosition = new Vector2(24f, 22f);
-            _root.sizeDelta = new Vector2(IconSize * 3f + Gap * 2f, IconSize);
+            _root.sizeDelta = new Vector2(IconSize * 4f + Gap * 3f, IconSize);
             _dash = new Slot("dash", _root);
             _invisibility = new Slot("invisibility", _root);
             _bat = new Slot("bat", _root);
+            _rage = new Slot("bloodrage_gui", _root);
             _root.gameObject.SetActive(false);
         }
 
@@ -51,6 +53,7 @@ namespace Vampirizm.UI
             int index = 0;
             _dash.Update(AbilityRules.IsUnlocked(level, settings.DashLevel.Value), controller.Dash.OnCooldown, ref index);
             _invisibility.Update(AbilityRules.IsUnlocked(level, settings.InvisibilityLevel.Value), controller.Invisibility.OnCooldown, ref index);
+            _rage.Update(AbilityRules.IsUnlocked(level, settings.BloodRageLevel.Value), controller.BloodRage.OnCooldown, ref index);
             _bat.Update(AbilityRules.IsUnlocked(level, settings.BatFormLevel.Value), controller.BatForm.OnCooldown, ref index);
         }
 
@@ -59,6 +62,7 @@ namespace Vampirizm.UI
             _dash?.Destroy();
             _invisibility?.Destroy();
             _bat?.Destroy();
+            _rage?.Destroy();
             if (_root != null) Object.Destroy(_root.gameObject);
         }
 
